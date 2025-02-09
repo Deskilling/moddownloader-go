@@ -5,21 +5,21 @@ import (
 	"slices"
 )
 
-func downloadMod(modName string, version string, loader string, filepath string) (bool, error) {
+func downloadMod(modName string, version string, loader string, filepath string) (string, bool, error) {
 	err := checkOutputPath(filepath)
 	if err != nil {
-		return false, err
+		return "", false,  err
 	}
 
 	url := fmt.Sprintf(modrinthEndpoint["modVersionInformation"], modName)
 	response, err := modrinthWebRequest(url)
 	if err != nil {
-		return false, err
+		return "", false,  err
 	}
 
 	extractedInformation, err := extractVersionInformation(response)
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
 
 	for _, i := range extractedInformation {
@@ -28,38 +28,41 @@ func downloadMod(modName string, version string, loader string, filepath string)
 			filename := i.Files[0].Filename
 
 			downloadFromUrl(downloadUrl, filepath+filename)
-			return true, nil
+			return filename, true, nil
 		}
 	}
 
 	projectName, err := projectIdToTitle(modName)
 	if err != nil {
-		return false, err
+		return "", false ,err
 	}
 
 	fmt.Printf("Version %s not found for %s, Loader: %s", version, projectName, loader)
 
-	return false, nil
+	return projectName, false, nil
 }
 
-func downloadViaHash(hash string, version string, loader string, filepath string) (bool, error) {
-	checkOutputPath(filepath)
+func downloadViaHash(hash string, version string, loader string, filepath string) (string, bool, error) {
+	err := checkOutputPath(filepath)
+	if err != nil {
+		return "", false, nil
+	}
 
 	url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hash)
 	response, err := modrinthWebRequest(url)
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
 
 	extractedInformation, err := extractVersionHashInformation(response)
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
 
-	status, err := downloadMod(extractedInformation.ProjectId, version, loader, filepath)
+	modname, status, err := downloadMod(extractedInformation.ProjectId, version, loader, filepath)
 	if err != nil || !status {
-		return false, err
+		return "", false, err
 	}
 
-	return status, nil
+	return modname, status, nil
 }
