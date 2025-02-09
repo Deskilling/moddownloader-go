@@ -23,9 +23,18 @@ func cliMain() {
 		fmt.Println("created mods_to_update/")
 	}
 
+	// TODO - Change to Buffio scan for defaults 
+	// Default for version should be the newest
+	fmt.Print("Enter Version to use: ")
+	var version string
+	fmt.Scan(&version)
+
+	fmt.Print("Enter Loader to use: ")
+    var loader string
+	fmt.Scan(&loader)
+
 	fmt.Println("\nPlace all mods into mods_to_update/ and press enter to Continue: ")
-	var nichts string
-	fmt.Scan(&nichts)
+	fmt.Scanln()
 
 	sha1Hashes, sha512Hashes, err:= calcualteAllHashesFromDirectory("mods_to_update/")
 	if err != nil {
@@ -37,13 +46,22 @@ func cliMain() {
 		fmt.Println("Hash slice have a different size")
 		return
 	} else {
-		fmt.Println("Hash slices are equal")
 		lenHashes := len(sha1Hashes)
 		fmt.Println(lenHashes)
 	}
 	// i is the index and v the value at that index
-	for i, v := range sha1Hashes {
-		fmt.Println(i)
-		fmt.Println(v)
+	for indexSha1, atIndexSha1 := range sha1Hashes {
+		modName, downloaded, err := downloadViaHash(atIndexSha1, version, loader, "output/")
+		if err != nil || !downloaded{
+			modName, downloaded, err := downloadViaHash(sha512Hashes[indexSha1], version, loader, "output/")
+			if err != nil || !downloaded{
+				fmt.Println("Failed to download")
+				break 
+			} else {
+				fmt.Println("Downloaded: ", modName)
+			}
+		} else {
+			fmt.Println("Downloaded: ", modName)
+		}
 	}
 }

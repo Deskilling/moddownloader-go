@@ -6,11 +6,6 @@ import (
 )
 
 func downloadMod(modName string, version string, loader string, filepath string) (string, bool, error) {
-	err := checkOutputPath(filepath)
-	if err != nil {
-		return "", false,  err
-	}
-
 	url := fmt.Sprintf(modrinthEndpoint["modVersionInformation"], modName)
 	response, err := modrinthWebRequest(url)
 	if err != nil {
@@ -45,11 +40,6 @@ func downloadMod(modName string, version string, loader string, filepath string)
 }
 
 func downloadViaHash(hash string, version string, loader string, filepath string) (string, bool, error) {
-	err := checkOutputPath(filepath)
-	if err != nil {
-		return "", false, nil
-	}
-
 	url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hash)
 	response, err := modrinthWebRequest(url)
 	if err != nil {
