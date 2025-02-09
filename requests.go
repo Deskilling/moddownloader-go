@@ -86,3 +86,18 @@ func downloadFromUrl(url string, filepath string) (err error) {
 
 	return nil
 }
+
+func projectIdToTitle(projectId string) (string, error) {
+	url := fmt.Sprintf(modrinthEndpoint["modInformation"], projectId)
+	response, err := modrinthWebRequest(url)
+	if err != nil {
+		return "", err
+	}
+
+	extractedInformation, err := extractModInformation(response)
+	if err != nil {
+		return "", err
+	}
+
+	return extractedInformation.ProjectTitle, nil
+}
