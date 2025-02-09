@@ -2,26 +2,13 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"slices"
 )
 
 func downloadMod(modName string, version string, loader string, filepath string) (bool, error) {
-	exists, err := doesPathExist(filepath)
+	err := checkOutputPath(filepath)
 	if err != nil {
 		return false, err
-	}
-
-	if exists {
-		empty, err := isDirEmpty("output")
-		if err != nil {
-			return false, err
-		}
-
-		if !empty {
-			os.RemoveAll(filepath)
-			os.MkdirAll(filepath, os.ModePerm)
-		}
 	}
 
 	url := fmt.Sprintf(modrinthEndpoint["modVersionInformation"], modName)
@@ -45,5 +32,34 @@ func downloadMod(modName string, version string, loader string, filepath string)
 		}
 	}
 
+	projectName, err := projectIdToTitle(modName)
+	if err != nil {
+		return false, err
+	}
+
+	fmt.Printf("Version %s not found for %s, Loader: %s", version, projectName, loader)
+
 	return false, nil
+}
+
+func downloadViaHash(hash string, version string, loader string, filepath string) (bool, error) {
+	checkOutputPath(filepath)
+
+	url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hash)
+	response, err := modrinthWebRequest(url)
+	if err != nil {
+		return false, err
+	}
+
+	extractedInformation, err := extractVersionHashInformation(response)
+	if err != nil {
+		return false, err
+	}
+
+	status, err := downloadMod(extractedInformation.ProjectId, version, loader, filepath)
+	if err != nil || !status {
+		return false, err
+	}
+
+	return status, nil
 }

@@ -64,7 +64,6 @@ func calculateHashSha1(filepath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Closes the Read
 	defer file.Close()
 
 	hash := sha1.New()
@@ -72,7 +71,7 @@ func calculateHashSha1(filepath string) (string, error) {
 		return "", err
 	}
 
-	return string(hash.Sum(nil)), nil
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func calculateHashSha512(filepath string) (string, error) {
@@ -90,17 +89,51 @@ func calculateHashSha512(filepath string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func calcualteAllHashesFromDirectory(directory string) error {
+func calcualteAllHashesFromDirectory(directory string) ([]string, []string, error) {
 	allFiles, err := getAllFilesFromDirectory(directory)
 	if err != nil {
-		return nil
+		return nil, nil, err
 	}
 
-	//var sha1Hashes []string
-	//var sha512Hashes []string
+	var sha1Hashes []string
+	var sha512Hashes []string
 	for _, file := range allFiles {
 		filepath := directory + file.Name()
-		fmt.Println(filepath)
+		//hash512, err := calculateHashSha512(filepath)
+		hash1, err := calculateHashSha1(filepath)
+		if err != nil {
+			return nil, nil, err
+		}
+		sha1Hashes = append(sha1Hashes, hash1)
+
+		hash512, err := calculateHashSha512(filepath)
+		if err != nil {
+			return nil, nil, err
+		}
+		sha512Hashes = append(sha512Hashes, hash512)
+
 	}
+
+	return sha1Hashes, sha512Hashes, nil
+}
+
+func checkOutputPath(filepath string) error {
+	exists, err := doesPathExist(filepath)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		empty, err := isDirEmpty("output")
+		if err != nil {
+			return err
+		}
+
+		if !empty {
+			os.RemoveAll(filepath)
+			os.MkdirAll(filepath, os.ModePerm)
+		}
+	}
+
 	return nil
 }
