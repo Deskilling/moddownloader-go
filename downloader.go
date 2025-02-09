@@ -21,23 +21,25 @@ func downloadMod(modName string, version string, loader string, filepath string)
 	if err != nil {
 		return "", false, err
 	}
-
-	for _, i := range extractedInformation {
-		if slices.Contains(i.GameVersions, version) && slices.Contains(i.SupportedLoaders, loader) {
-			downloadUrl := i.Files[0].URL
-			filename := i.Files[0].Filename
+	// _ is here the index of the current value and i the index of the current position
+	for _, v := range extractedInformation {
+		// in the slice from i is the GameVersion and Loder if not loop
+		if slices.Contains(v.GameVersions, version) && slices.Contains(v.SupportedLoaders, loader) {
+			downloadUrl := v.Files[0].URL
+			filename := v.Files[0].Filename
 
 			downloadFromUrl(downloadUrl, filepath+filename)
 			return filename, true, nil
 		}
 	}
 
+	// To convert the Id into the Title 
 	projectName, err := projectIdToTitle(modName)
 	if err != nil {
 		return "", false ,err
 	}
 
-	fmt.Printf("Version %s not found for %s, Loader: %s", version, projectName, loader)
+	fmt.Printf("Version %s not found for %s, Loader: %s\n", version, projectName, loader)
 
 	return projectName, false, nil
 }
