@@ -36,7 +36,7 @@ func cliMain() {
 	fmt.Println("\nPlace all mods into mods_to_update/ and press enter to Continue: ")
 	fmt.Scanln()
 
-	sha1Hashes, sha512Hashes, err := calcualteAllHashesFromDirectory("mods_to_update/")
+	sha1Hashes, sha512Hashes, err:= calcualteAllHashesFromDirectory("mods_to_update/")
 	if err != nil {
 		fmt.Println("Error at calcualteAllHashesFromDirectory: ", err)
 		return
@@ -54,8 +54,9 @@ func cliMain() {
 		modName, downloaded, err := downloadViaHash(atIndexSha1, version, loader, "output/")
 		if err != nil || !downloaded {
 			modName, downloaded, err := downloadViaHash(sha512Hashes[indexSha1], version, loader, "output/")
-			if err != nil || !downloaded {
+			if err != nil || !downloaded{
 				fmt.Println("Failed to download")
+				break 
 			} else {
 				fmt.Println("Downloaded: ", modName)
 			}
