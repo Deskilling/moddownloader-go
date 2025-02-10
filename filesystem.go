@@ -89,10 +89,10 @@ func calculateHashSha512(filepath string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func calcualteAllHashesFromDirectory(directory string) ([]string, []string, error) {
+func calcualteAllHashesFromDirectory(directory string) ([]string, []string, []os.DirEntry, error) {
 	allFiles, err := getAllFilesFromDirectory(directory)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var sha1Hashes []string
@@ -102,19 +102,19 @@ func calcualteAllHashesFromDirectory(directory string) ([]string, []string, erro
 		//hash512, err := calculateHashSha512(filepath)
 		hash1, err := calculateHashSha1(filepath)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil,nil, err
 		}
 		sha1Hashes = append(sha1Hashes, hash1)
 
 		hash512, err := calculateHashSha512(filepath)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		sha512Hashes = append(sha512Hashes, hash512)
 
 	}
 
-	return sha1Hashes, sha512Hashes, nil
+	return sha1Hashes, sha512Hashes, allFiles, nil
 }
 
 func checkOutputPath(filepath string) error {
