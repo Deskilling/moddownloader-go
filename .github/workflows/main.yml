@@ -10,4 +10,4 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run Bash script
-        run: sudo chmod +x ./bash.sh && sudo bash ./bash.sh
+        run: pwd && sudo chmod +x ./build.sh && sudo bash ./build.sh
