@@ -51,17 +51,17 @@ func downloadViaHash(hash string, version string, loader string, filepath string
 	url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hash)
 	response, err := modrinthWebRequest(url)
 	if err != nil {
-		return hash, false, fmt.Errorf("failed to fetch version info via hash: %w", err)
+		return "", false, fmt.Errorf("failed to fetch version info via hash: %w", err)
 	}
 
 	extractedInformation, err := extractVersionHashInformation(response)
 	if err != nil {
-		return hash, false, fmt.Errorf("failed to parse version info via hash: %w", err)
+		return "", false, fmt.Errorf("failed to parse version info via hash: %w", err)
 	}
 
 	modName, status, err := downloadMod(extractedInformation.ProjectId, version, loader, filepath)
 	if err != nil || !status {
-		return modName, false, err
+		return "", false, err
 	}
 
 	return modName, status, nil

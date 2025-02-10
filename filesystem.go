@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 func doesPathExist(path string) (bool, error) {
@@ -54,7 +55,16 @@ func getAllFilesFromDirectory(directory string) ([]os.DirEntry, error) {
 		if err != nil {
 			return nil, err
 		}
-		return allFiles, nil
+
+		var filteredFiles []os.DirEntry
+
+		for _, file := range allFiles {
+			if filepath.Ext(file.Name()) == ".jar" {
+				filteredFiles = append(filteredFiles, file)
+			}
+		}
+
+		return filteredFiles, nil
 	}
 	return nil, nil
 }

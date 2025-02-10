@@ -56,7 +56,7 @@ func cliMain() {
 	scanner.Scan()
 
 	fmt.Println("🔍 Calculating hashes for your mods...⌛")
-	sha1Hashes, sha512Hashes, _, err := calculateAllHashesFromDirectory("mods_to_update/")
+	sha1Hashes, sha512Hashes, allFiles, err := calculateAllHashesFromDirectory("mods_to_update/")
 	if err != nil {
 		fmt.Println("Error calculating file hashes:", err)
 		return
@@ -107,6 +107,9 @@ func cliMain() {
 				modName, downloaded, err = downloadViaHash(sha512Hashes[index], version, loader, outputPath)
 				if err != nil || !downloaded {
 					mu.Lock()
+					if modName == "" {
+						modName = string(allFiles[index].Name())
+					}
 					// TODO - If the modname is a hash return the original filename
 					fmt.Printf("❌ Failed: %s for Version: %s / %s\n", modName, version, loader)
 					mu.Unlock()
