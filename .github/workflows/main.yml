@@ -10,4 +10,4 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run Bash script
-        run: pwd && sudo chmod +x ./build.sh && sudo bash ./build.sh
+        run: pwd && sudo chmod +x ./build.sh && sudo bash ./build.sh && git add builds/ && git commit -m "Build via Actions" && git push
