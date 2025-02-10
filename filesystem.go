@@ -59,59 +59,42 @@ func getAllFilesFromDirectory(directory string) ([]os.DirEntry, error) {
 	return nil, nil
 }
 
-func calculateHashSha1(filepath string) (string, error) {
+func calculateHashes(filepath string) (string, string, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer file.Close()
 
-	hash := sha1.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
+	sha1Hash := sha1.New()
+	sha512Hash := sha512.New()
+
+	// Copy file content to both hash functions simultaneously
+	if _, err := io.Copy(io.MultiWriter(sha1Hash, sha512Hash), file); err != nil {
+		return "", "", err
 	}
 
-	return hex.EncodeToString(hash.Sum(nil)), nil
+	return hex.EncodeToString(sha1Hash.Sum(nil)), hex.EncodeToString(sha512Hash.Sum(nil)), nil
 }
 
-func calculateHashSha512(filepath string) (string, error) {
-	file, err := os.Open(filepath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	hash := sha512.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func calcualteAllHashesFromDirectory(directory string) ([]string, []string, []os.DirEntry, error) {
+func calculateAllHashesFromDirectory(directory string) ([]string, []string, []os.DirEntry, error) {
 	allFiles, err := getAllFilesFromDirectory(directory)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	var sha1Hashes []string
-	var sha512Hashes []string
+	var sha1Hashes, sha512Hashes []string
+
 	for _, file := range allFiles {
 		filepath := directory + file.Name()
-		//hash512, err := calculateHashSha512(filepath)
-		hash1, err := calculateHashSha1(filepath)
-		if err != nil {
-			return nil, nil,nil, err
-		}
-		sha1Hashes = append(sha1Hashes, hash1)
 
-		hash512, err := calculateHashSha512(filepath)
+		hash1, hash512, err := calculateHashes(filepath)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		sha512Hashes = append(sha512Hashes, hash512)
 
+		sha1Hashes = append(sha1Hashes, hash1)
+		sha512Hashes = append(sha512Hashes, hash512)
 	}
 
 	return sha1Hashes, sha512Hashes, allFiles, nil
@@ -130,8 +113,12 @@ func checkOutputPath(filepath string) error {
 		}
 
 		if !empty {
-			os.RemoveAll(filepath)
-			os.MkdirAll(filepath, os.ModePerm)
+			if err := os.RemoveAll(filepath); err != nil {
+				return err
+			}
+			if err := os.MkdirAll(filepath, os.ModePerm); err != nil {
+				return err
+			}
 		}
 	}
 

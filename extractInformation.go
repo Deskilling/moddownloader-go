@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // To Extractig the Specific Mod information
@@ -41,36 +42,33 @@ type ModVersionInformation struct {
 
 // To extract all the Relevant Information of a Project from the Endpoint modInformation
 func extractModInformation(modData string) (ModInformation, error) {
-	var extractedInformation ModInformation
+	var info ModInformation
 	// Umarshal converts the json data into a Go Struct.
 	// byte converts the modData json into a byte slice, this is required for Unmarshal
 	// Then there is the pointer to the struct which then searches the byte slice and sets the values in the struct
-	err := json.Unmarshal([]byte(modData), &extractedInformation)
-	if err != nil {
-		return ModInformation{}, err
+	if err := json.Unmarshal([]byte(modData), &info); err != nil {
+		return ModInformation{}, fmt.Errorf("failed to unmarshal mod information: %w", err)
 	}
 
-	return extractedInformation, nil
+	return info, nil
 }
 
 // This can be used for the genral version data and the filehash data
 func extractVersionInformation(modVersionData string) ([]ModVersionInformation, error) {
-	var extractedModVersionsData []ModVersionInformation
-	err := json.Unmarshal([]byte(modVersionData), &extractedModVersionsData)
-	if err != nil {
-		return nil, err
+	var versionsInfo []ModVersionInformation
+	if err := json.Unmarshal([]byte(modVersionData), &versionsInfo); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal mod version information: %w", err)
 	}
 
-	return extractedModVersionsData, nil
+	return versionsInfo, nil
 }
 
 // Sad have to reuse due the slice
 func extractVersionHashInformation(modVersionData string) (ModVersionInformation, error) {
-	var extractedModVersionsData ModVersionInformation
-	err := json.Unmarshal([]byte(modVersionData), &extractedModVersionsData)
-	if err != nil {
-		return ModVersionInformation{}, err
+	var fileInfo ModVersionInformation
+	if err := json.Unmarshal([]byte(modVersionData), &fileInfo); err != nil {
+		return ModVersionInformation{}, fmt.Errorf("failed to unmarshal mod version information: %w", err)
 	}
 
-	return extractedModVersionsData, nil
+	return fileInfo, nil
 }
