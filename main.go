@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Started")
+	fmt.Println("🚀 Started Moddownloader-go")
 	cliMain()
 }
