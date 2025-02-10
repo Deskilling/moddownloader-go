@@ -36,7 +36,7 @@ func cliMain() {
 	fmt.Println("\nPlace all mods into mods_to_update/ and press enter to Continue: ")
 	fmt.Scanln()
 
-	sha1Hashes, sha512Hashes, err:= calcualteAllHashesFromDirectory("mods_to_update/")
+	sha1Hashes, sha512Hashes,_ , err:= calcualteAllHashesFromDirectory("mods_to_update/")
 	if err != nil {
 		fmt.Println("Error at calcualteAllHashesFromDirectory: ", err)
 		return
