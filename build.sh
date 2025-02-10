@@ -1,6 +1,7 @@
 #!/bin/bash
 BINARY_NAME="moddownloader-go"
 OUTPUT_DIR="./builds"
+rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 PLATFORMS=(
     "windows/amd64"
