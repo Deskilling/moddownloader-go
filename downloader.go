@@ -5,24 +5,24 @@ import (
 	"slices"
 )
 
-func getDownload(extractedInformation []ModVersionInformation, version string, loader string) (string, string, error) {
+func getDownload(extractedInformation []ModVersionInformation, version string, loader string) (string, string, bool, error) {
 	// _ is here the index of the current value and i the index of the current position
 	for _, v := range extractedInformation {
 		// in the slice from i is the GameVersion and Loder if not loop
 		if slices.Contains(v.GameVersions, version) && slices.Contains(v.SupportedLoaders, loader) {
 			// Runs when there are no files
 			if len(v.Files) == 0 {
-				return "", "", fmt.Errorf("no files available")
+				return "", "", true, fmt.Errorf("no files available")
 			}
 
 			downloadUrl := v.Files[0].URL
 			filename := v.Files[0].Filename
 
-			return downloadUrl, filename, nil
+			return downloadUrl, filename, true, nil
 		}
 	}
 
-	return "", "", fmt.Errorf("idfk")
+	return "", "", false, fmt.Errorf("idfk")
 }
 
 func downloadMod(modName string, version string, loader string, filepath string) (string, bool, error) {
@@ -37,7 +37,7 @@ func downloadMod(modName string, version string, loader string, filepath string)
 		return "", false, fmt.Errorf("failed to parse mod version info: %w", err)
 	}
 
-	downloadUrl, filename, err := getDownload(extractedInformation, version, loader)
+	downloadUrl, filename, _, err := getDownload(extractedInformation, version, loader)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get download for file: %w", filename)
 	}
