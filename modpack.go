@@ -27,17 +27,17 @@ type hashes struct {
 	Sha512 string `json:"sha512"`
 }
 
-func getDownloadUrl(modName string, version string, loader string) (string, bool, error) {
+func getDownloadUrl(modName string, version string, loader string) (bool, string, error) {
 	url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], modName)
 
 	response, err := modrinthWebRequest(url)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to fetch mod version info: %w", err)
+		return false, "", fmt.Errorf("failed to fetch mod version info: %w", err)
 	}
 
 	extractedFileInformation, err := extractVersionHashInformation(response)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to parse mod version info: %w", err)
+		return false, "", fmt.Errorf("failed to parse mod version info: %w", err)
 	}
 
 	projectId := extractedFileInformation.ProjectId
@@ -45,14 +45,36 @@ func getDownloadUrl(modName string, version string, loader string) (string, bool
 	url = fmt.Sprintf(modrinthEndpoint["modVersionInformation"], projectId)
 	response, err = modrinthWebRequest(url)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to fetch mod version info: %w", err)
+		return false, "", fmt.Errorf("failed to fetch mod version info: %w", err)
 	}
 
 	extractedInformation, err := extractVersionInformation(response)
 
-	fmt.Println(getDownload(extractedInformation, version, loader))
+	downloadUrl, _, downloadStatus, _ := getDownload(extractedInformation, version, loader)
 
-	return "", false, nil
+	if downloadStatus {
+		return true, downloadUrl, nil
+	} else {
+		return false, "", nil
+	}
+}
+
+// TODO - Remove Files in modpack that match the current val of removeMods
+func removedMods(modpack modpack, removeMods []int) {
+	var returnMods []string
+
+	for i := range modpack.Files {
+		remove := false
+		for _, removeIndex := range removeMods {
+			if i == removeIndex {
+				remove = true
+				break
+			}
+		}
+		if !remove {
+			returnMods = append(returnMods, modpack.Files[i].Path)
+		}
+	}
 }
 
 func parseModpack(jsonData string) {
@@ -67,9 +89,30 @@ func parseModpack(jsonData string) {
 	fmt.Printf("Minecraft Version: %s\n", modpack.Dependencies["minecraft"])
 	fmt.Printf("Anzahl der Mods: %d\n", len(modpack.Files))
 
-	for _, file := range modpack.Files {
+	notFoundMods := []int{}
+
+	// TODO - Add Multithread (Currently Very Ass)
+
+	for i, file := range modpack.Files {
 		fileHash := file.Hashes.Sha1
-		getDownloadUrl(fileHash, "1.17.1", "fabric")
+		downloadStatus, url, err := getDownloadUrl(fileHash, "1.17.1", "fabric")
+		if err != nil {
+			fmt.Println("Fehler Url not found for x x :", err)
+			return
+		}
+
+		if downloadStatus {
+			fmt.Println(url)
+		}
+		if !downloadStatus {
+			fmt.Println("Fehler beim Download von Mod:", modpack.Files[i].Path)
+
+			notFoundMods = append(notFoundMods, i)
+
+			fmt.Println(modpack.Files[i].Path)
+		}
+
 	}
 
+	removedMods(modpack, notFoundMods)
 }
