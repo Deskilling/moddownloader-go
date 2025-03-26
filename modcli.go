@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func cliMain() {
+func modMain() {
 	var outputPath string = "output/"
 
 	err := checkOutputPath(outputPath)
@@ -87,7 +87,7 @@ func cliMain() {
 		}
 	*/
 
-	// To wait for gorutine
+	// To wait for goroutine
 	var wg sync.WaitGroup
 	// a lock kinda
 	var mu sync.Mutex
@@ -110,10 +110,9 @@ func cliMain() {
 					if modName == "" {
 						modName = string(allFiles[index].Name())
 					}
-					// TODO - If the modname is a hash return the original filename
 					fmt.Printf("❌ Failed: %s for Version: %s / %s\n", modName, version, loader)
 					mu.Unlock()
-					// Return is used to exit the gorutine
+					// Return is used to exit the goroutine
 					return
 				}
 			}
