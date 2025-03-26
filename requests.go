@@ -59,7 +59,6 @@ func modrinthWebRequest(endpoint string) (string, error) {
 	}
 
 	// returning the full requested body if no error happend during the request itself and body
-	// TODO - should check what kind of erors can hapen (the most common ones. No Internet or Invalid request or missing mod and stuff)
 	return string(body), nil
 }
 

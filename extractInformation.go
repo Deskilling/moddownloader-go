@@ -28,18 +28,6 @@ type File struct {
 	Size     int    `json:"size"`
 }
 
-// To Extract the Specific Version Information
-type ModVersionInformation struct {
-	GameVersions     []string `json:"game_versions"`
-	SupportedLoaders []string `json:"loaders"`
-	VersionId        string   `json:"id"`
-	ProjectId        string   `json:"project_id"`
-	VersionName      string   `json:"name"`
-	VersionPublished string   `json:"date_published"`
-	ProjectDownloads uint     `json:"downloads"`
-	Files            []File   `json:"files"`
-}
-
 // To extract all the Relevant Information of a Project from the Endpoint modInformation
 func extractModInformation(modData string) (ModInformation, error) {
 	var info ModInformation
@@ -51,6 +39,18 @@ func extractModInformation(modData string) (ModInformation, error) {
 	}
 
 	return info, nil
+}
+
+// To Extract the Specific Version Information
+type ModVersionInformation struct {
+	GameVersions     []string `json:"game_versions"`
+	SupportedLoaders []string `json:"loaders"`
+	VersionId        string   `json:"id"`
+	ProjectId        string   `json:"project_id"`
+	VersionName      string   `json:"name"`
+	VersionPublished string   `json:"date_published"`
+	ProjectDownloads uint     `json:"downloads"`
+	Files            []File   `json:"files"`
 }
 
 // This can be used for the genral version data and the filehash data

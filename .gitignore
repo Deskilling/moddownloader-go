@@ -1,4 +1,6 @@
-moddownloader-go.exe
-output/
-mods_to_update/
-builds/
+/builds
+/mods_to_update
+/output
+/temp
+/.idea
+/modpacks
