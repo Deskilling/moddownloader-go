@@ -98,9 +98,9 @@ func calculateAllHashesFromDirectory(directory string) ([]string, []string, []os
 	var sha1Hashes, sha512Hashes []string
 
 	for _, file := range allFiles {
-		filepath := directory + file.Name()
+		filePath := directory + file.Name()
 
-		hash1, hash512, err := calculateHashes(filepath)
+		hash1, hash512, err := calculateHashes(filePath)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -173,4 +173,13 @@ func readFile(filepath string) string {
 		return ""
 	}
 	return string(fileContent)
+}
+
+func checkStringValidPath(path string) string {
+	lastChar := path[len(path)-1:]
+	if lastChar != "/" {
+		path += "/"
+	}
+	doesPathExist(path)
+	return path
 }

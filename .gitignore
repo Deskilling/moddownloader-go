@@ -4,3 +4,5 @@
 /temp
 /.idea
 /modpacks
+build.ps1
+build.sh

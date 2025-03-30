@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"sync"
 )
 
 func modMain() {
@@ -12,13 +11,15 @@ func modMain() {
 
 	err := checkOutputPath(outputPath)
 	if err != nil {
-		fmt.Println("❌ Error checking/creating output/:", err)
+		fmt.Printf("❌ Error checking/creating %s:%s\n", outputPath, err)
 		return
 	}
 
-	status, err := doesPathExist("mods_to_update/")
+	var inputPath string = "mods_to_update/"
+
+	status, err := doesPathExist(inputPath)
 	if err != nil {
-		fmt.Println("❌ Error checking/creating mods_to_update/:", err)
+		fmt.Printf("❌ Error checking/creating %s: %s\n", inputPath, err)
 		return
 	}
 
@@ -52,11 +53,11 @@ func modMain() {
 		loader = "fabric"
 	}
 
-	fmt.Println("\n" + `📥 Please place all mods into "mods_to_update/" and press ENTER↩️  to continue:`)
+	fmt.Printf("\n📥 Please place all mods into ''%s'' and press ENTER↩️  to continue:", inputPath)
 	scanner.Scan()
 
 	fmt.Println("🔍 Calculating hashes for your mods...⌛")
-	sha1Hashes, sha512Hashes, allFiles, err := calculateAllHashesFromDirectory("mods_to_update/")
+	sha1Hashes, sha512Hashes, allFiles, err := calculateAllHashesFromDirectory(inputPath)
 	if err != nil {
 		fmt.Println("Error calculating file hashes:", err)
 		return
@@ -69,64 +70,8 @@ func modMain() {
 		fmt.Printf("✅ Found %d mods to update!\n\n", len(sha1Hashes))
 	}
 
-	// Shitty
-	// i is the index and v the value at that index
-	/*
-		for indexSha1, atIndexSha1 := range sha1Hashes {
-			modName, downloaded, err := downloadViaHash(atIndexSha1, version, loader, "output/")
-			if err != nil || !downloaded {
-				modName, downloaded, err := downloadViaHash(sha512Hashes[indexSha1], version, loader, "output/")
-				if err != nil || !downloaded {
-					fmt.Println("Failed to download")
-				} else {
-					fmt.Println("Downloaded: ", modName)
-				}
-			} else {
-				fmt.Println("Downloaded: ", modName)
-			}
-		}
-	*/
+	updateAllViaArgs(version, loader, outputPath, sha1Hashes, sha512Hashes, allFiles)
 
-	// To wait for goroutine
-	var wg sync.WaitGroup
-	// a lock kinda
-	var mu sync.Mutex
-
-	fmt.Println("📡 Downloading mods...")
-
-	for indexSha1, atIndexSha1 := range sha1Hashes {
-		// Increment WaitGroup counter
-		wg.Add(1)
-
-		go func(index int, sha1 string) {
-			// Decrement counter when goroutine completes
-			defer wg.Done()
-
-			modName, downloaded, err := downloadViaHash(sha1, version, loader, outputPath)
-			if err != nil || !downloaded {
-				modName, downloaded, err = downloadViaHash(sha512Hashes[index], version, loader, outputPath)
-				if err != nil || !downloaded {
-					mu.Lock()
-					if modName == "" {
-						modName = string(allFiles[index].Name())
-					}
-					fmt.Printf("❌ Failed: %s for Version: %s / %s\n", modName, version, loader)
-					mu.Unlock()
-					// Return is used to exit the goroutine
-					return
-				}
-			}
-
-			mu.Lock()
-			fmt.Println("✅ Downloaded:", modName)
-			mu.Unlock()
-
-		}(indexSha1, atIndexSha1)
-	}
-
-	// Wait for all downloads to finish
-	wg.Wait()
-
-	fmt.Println("\n\n✅ All downloads completed.")
+	fmt.Println("\n[Enter to exit]")
 	scanner.Scan()
 }
