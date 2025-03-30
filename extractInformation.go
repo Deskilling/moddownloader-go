@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// To Extractig the Specific Mod information
 type ModInformation struct {
 	GameVersions       []string `json:"game_versions"`
 	SupportedLoaders   []string `json:"loaders"`
@@ -17,7 +16,6 @@ type ModInformation struct {
 	ProjectIconUrl     string   `json:"icon_url"`
 }
 
-// To get the Files information
 type File struct {
 	Hashes struct {
 		Sha1   string `json:"sha1"`
@@ -28,19 +26,6 @@ type File struct {
 	Size     int    `json:"size"`
 }
 
-// To Extract the Specific Version Information
-type ModVersionInformation struct {
-	GameVersions     []string `json:"game_versions"`
-	SupportedLoaders []string `json:"loaders"`
-	VersionId        string   `json:"id"`
-	ProjectId        string   `json:"project_id"`
-	VersionName      string   `json:"name"`
-	VersionPublished string   `json:"date_published"`
-	ProjectDownloads uint     `json:"downloads"`
-	Files            []File   `json:"files"`
-}
-
-// To extract all the Relevant Information of a Project from the Endpoint modInformation
 func extractModInformation(modData string) (ModInformation, error) {
 	var info ModInformation
 	// Umarshal converts the json data into a Go Struct.
@@ -53,7 +38,17 @@ func extractModInformation(modData string) (ModInformation, error) {
 	return info, nil
 }
 
-// This can be used for the genral version data and the filehash data
+type ModVersionInformation struct {
+	GameVersions     []string `json:"game_versions"`
+	SupportedLoaders []string `json:"loaders"`
+	VersionId        string   `json:"id"`
+	ProjectId        string   `json:"project_id"`
+	VersionName      string   `json:"name"`
+	VersionPublished string   `json:"date_published"`
+	ProjectDownloads uint     `json:"downloads"`
+	Files            []File   `json:"files"`
+}
+
 func extractVersionInformation(modVersionData string) ([]ModVersionInformation, error) {
 	var versionsInfo []ModVersionInformation
 	if err := json.Unmarshal([]byte(modVersionData), &versionsInfo); err != nil {
@@ -63,7 +58,6 @@ func extractVersionInformation(modVersionData string) ([]ModVersionInformation, 
 	return versionsInfo, nil
 }
 
-// Sad have to reuse due the slice
 func extractVersionHashInformation(modVersionData string) (ModVersionInformation, error) {
 	var fileInfo ModVersionInformation
 	if err := json.Unmarshal([]byte(modVersionData), &fileInfo); err != nil {

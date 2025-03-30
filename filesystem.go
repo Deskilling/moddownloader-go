@@ -1,12 +1,14 @@
 package main
 
 import (
+	"archive/zip"
 	"crypto/sha1"
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -96,9 +98,9 @@ func calculateAllHashesFromDirectory(directory string) ([]string, []string, []os
 	var sha1Hashes, sha512Hashes []string
 
 	for _, file := range allFiles {
-		filepath := directory + file.Name()
+		filePath := directory + file.Name()
 
-		hash1, hash512, err := calculateHashes(filepath)
+		hash1, hash512, err := calculateHashes(filePath)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -133,4 +135,51 @@ func checkOutputPath(filepath string) error {
 	}
 
 	return nil
+}
+
+func extractZip(source, dest string) error {
+	read, err := zip.OpenReader(source)
+	if err != nil {
+		return err
+	}
+	defer read.Close()
+	for _, file := range read.File {
+		if file.Mode().IsDir() {
+			continue
+		}
+		open, err := file.Open()
+		if err != nil {
+			return err
+		}
+		name := path.Join(dest, file.Name)
+		err = os.MkdirAll(path.Dir(name), os.ModeDir)
+		if err != nil {
+			return err
+		}
+		create, err := os.Create(name)
+		if err != nil {
+			return err
+		}
+		defer create.Close()
+		create.ReadFrom(open)
+	}
+	return nil
+}
+
+func readFile(filepath string) string {
+	fileContent, err := os.ReadFile(filepath)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return ""
+	}
+	return string(fileContent)
+}
+
+func checkStringValidPath(path string) string {
+	lastChar := path[len(path)-1:]
+	if lastChar != "/" {
+		path += "/"
+	}
+	doesPathExist(path)
+	return path
 }
