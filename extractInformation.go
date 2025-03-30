@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// To Extractig the Specific Mod information
 type ModInformation struct {
 	GameVersions       []string `json:"game_versions"`
 	SupportedLoaders   []string `json:"loaders"`
@@ -17,7 +16,6 @@ type ModInformation struct {
 	ProjectIconUrl     string   `json:"icon_url"`
 }
 
-// To get the Files information
 type File struct {
 	Hashes struct {
 		Sha1   string `json:"sha1"`
@@ -28,7 +26,6 @@ type File struct {
 	Size     int    `json:"size"`
 }
 
-// To extract all the Relevant Information of a Project from the Endpoint modInformation
 func extractModInformation(modData string) (ModInformation, error) {
 	var info ModInformation
 	// Umarshal converts the json data into a Go Struct.
@@ -41,7 +38,6 @@ func extractModInformation(modData string) (ModInformation, error) {
 	return info, nil
 }
 
-// To Extract the Specific Version Information
 type ModVersionInformation struct {
 	GameVersions     []string `json:"game_versions"`
 	SupportedLoaders []string `json:"loaders"`
@@ -53,7 +49,6 @@ type ModVersionInformation struct {
 	Files            []File   `json:"files"`
 }
 
-// This can be used for the genral version data and the filehash data
 func extractVersionInformation(modVersionData string) ([]ModVersionInformation, error) {
 	var versionsInfo []ModVersionInformation
 	if err := json.Unmarshal([]byte(modVersionData), &versionsInfo); err != nil {
@@ -63,7 +58,6 @@ func extractVersionInformation(modVersionData string) ([]ModVersionInformation, 
 	return versionsInfo, nil
 }
 
-// Sad have to reuse due the slice
 func extractVersionHashInformation(modVersionData string) (ModVersionInformation, error) {
 	var fileInfo ModVersionInformation
 	if err := json.Unmarshal([]byte(modVersionData), &fileInfo); err != nil {
