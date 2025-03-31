@@ -16,11 +16,11 @@ func checkConnection() error {
 	return nil
 }
 
-func checkArgs() (string, string, string, string) {
+func checkArgs() (string, string, string, string, string) {
 	var latestVersion, _ = getReleaseVersions()
 
 	// Flags
-	//argMode := flag.String("mode", "mods", "Select between mods or modpacks")
+	argMode := flag.String("mode", "mods", "Select between mods or modpacks")
 	argVersion := flag.String("version", latestVersion[0].Version, "Minecraft version")
 	argLoader := flag.String("loader", "fabric", "Loader")
 	argInputFolder := flag.String("input", "mods_to_update/", "Input file")
@@ -29,13 +29,13 @@ func checkArgs() (string, string, string, string) {
 	// Parse the command-line flags
 	flag.Parse()
 
-	//mode := *argMode
+	mode := *argMode
 	version := *argVersion
 	loader := *argLoader
 	input := *argInputFolder
 	output := *argOutputFolder
 
-	return version, loader, input, output
+	return version, loader, input, output, mode
 }
 
 func main() {
@@ -45,13 +45,32 @@ func main() {
 	}
 
 	if len(os.Args) < 2 {
-		modMain()
-	} else {
-		version, loader, input, output := checkArgs()
-		input = checkStringValidPath(input)
-		sha1Hashes, sha512Hashes, allFiles, _ := calculateAllHashesFromDirectory(input)
-		output = checkStringValidPath(output)
-		updateAllViaArgs(version, loader, output, sha1Hashes, sha512Hashes, allFiles)
-	}
+		fmt.Println("[1] Modfiles or [2] Modpack")
 
+		var option int = 2
+		/*
+			_, err := fmt.Scanln(&option)
+			if err != nil {
+				return
+			}
+		*/
+
+		if option == 1 {
+			modMain()
+
+		} else if option == 2 {
+			modpackMain()
+		}
+	} else {
+		// Maybe Move
+		version, loader, input, output, mode := checkArgs()
+		if mode == "mods" {
+			input = checkStringValidPath(input)
+			sha1Hashes, sha512Hashes, allFiles, _ := calculateAllHashesFromDirectory(input)
+			output = checkStringValidPath(output)
+			updateAllViaArgs(version, loader, output, sha1Hashes, sha512Hashes, allFiles)
+		} else if mode == "modpack" {
+			modpackMain()
+		}
+	}
 }
