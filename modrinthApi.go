@@ -20,10 +20,15 @@ func projectIdToTitle(projectId string) (string, error) {
 	return extractedInformation.ProjectTitle, nil
 }
 
+// 2 in 1 bad but juckt
 type Version struct {
 	Version     string `json:"version"`
 	VersionType string `json:"version_type"`
 	//Major       bool   `json:"major"`
+
+	// Fabric Specific
+	Build int `json:"build"`
+	Stable bool `json:"stable"`
 }
 
 func getReleaseVersions() ([]Version, error) {
@@ -46,4 +51,18 @@ func getReleaseVersions() ([]Version, error) {
 	}
 
 	return releaseVersions, nil
+}
+
+func getLatestFabricVersion() string {
+	response, err := modrinthWebRequest(modrinthEndpoint["fabricVersions"])
+	if err != nil {
+		panic(err)
+	}
+
+	var fabricVersion []Version
+	err = json.Unmarshal([]byte(response),&fabricVersion)
+	if err != nil {
+		panic(err)
+	}
+	return fabricVersion[0].Version
 }

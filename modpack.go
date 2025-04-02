@@ -28,63 +28,87 @@ type hashes struct {
 	Sha512 string `json:"sha512"`
 }
 
-func parseModpack(jsonData string) {
-	var version string = "1.19.1"
-	var loader string = "fabric"
+func parseModpack(jsonData string, version string, loader string) (modpack, []byte) {
+    var modpack modpack
+    err := json.Unmarshal([]byte(jsonData), &modpack)
+    if err != nil {
+        fmt.Println("Error unmarshalling JSON:", err)
+        return modpack, nil
+    }
 
-	var modpack modpack
-	err := json.Unmarshal([]byte(jsonData), &modpack)
-	if err != nil {
-		fmt.Println("Fehler beim Unmarshal:", err)
-		return
-	}
+    fmt.Printf("Modpack Name: %s\n", modpack.Name)
+    fmt.Printf("Minecraft Version: %s\n", modpack.Dependencies["minecraft"])
+    fmt.Printf("Number of Mods: %d\n", len(modpack.Files))
 
-	fmt.Printf("Modpack Name: %s\n", modpack.Name)
-	fmt.Printf("Minecraft Version: %s\n", modpack.Dependencies["minecraft"])
-	fmt.Printf("Anzahl der Mods: %d\n", len(modpack.Files))
+    modpack.Dependencies["minecraft"] = version
+    modpack.Dependencies["fabric-loader"] = getLatestFabricVersion()
 
-	for i := range len(modpack.Files) {
-		hashSha1 := modpack.Files[i].Hashes.Sha1
-		hashSha512 := modpack.Files[i].Hashes.Sha512
+    var filesToRemove []int
 
-		url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hashSha1)
-		response, err := modrinthWebRequest(url)
-		if err != nil {
-			url = fmt.Sprintf(modrinthEndpoint["versionFileHash"], hashSha512)
-			response, err = modrinthWebRequest(url)
-			if err != nil {
-				continue
-			}
-		}
+    for i := 0; i < len(modpack.Files); i++ {
+        // Directly Modify
+        file := &modpack.Files[i] 
+        hashSha1 := file.Hashes.Sha1
+        hashSha512 := file.Hashes.Sha512
 
-		extractedHashInformation, _ := extractVersionHashInformation(response)
-		projectId := extractedHashInformation.ProjectId
+        url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hashSha1)
+        response, err := modrinthWebRequest(url)
+        if err != nil {
+            url = fmt.Sprintf(modrinthEndpoint["versionFileHash"], hashSha512)
+            response, err = modrinthWebRequest(url)
+            if err != nil {
+                continue
+            }
+        }
 
-		url = fmt.Sprintf(modrinthEndpoint["modVersionInformation"], projectId)
-		response, _ = modrinthWebRequest(url)
-		extractedVersionInformation, _ := extractVersionInformation(response)
+        extractedHashInformation, err := extractVersionHashInformation(response)
+        if err != nil {
+            continue
+        }
 
-		downloadUrl, _, _, _ := getDownload(extractedVersionInformation, version, "fabric")
+        projectId := extractedHashInformation.ProjectId
+        url = fmt.Sprintf(modrinthEndpoint["modVersionInformation"], projectId)
+        response, err = modrinthWebRequest(url)
+        if err != nil {
+            continue
+        }
 
-		var downloadUrlSlice []string
-		downloadUrlSlice = append(downloadUrlSlice, downloadUrl)
+        extractedVersionInformation, err := extractVersionInformation(response)
+        if err != nil {
+            continue
+        }
 
-		modpack.Files[i].DownloadUrl = downloadUrlSlice
+        downloadUrl, _, _, _ := getDownload(extractedVersionInformation, version, loader)
+        if downloadUrl == "" {
+            filesToRemove = append(filesToRemove, i)
+            continue
+        }
 
-		for _, v := range extractedVersionInformation {
-			// in the slice from i is the GameVersion and Loder if not loop
-			if slices.Contains(v.GameVersions, version) && slices.Contains(v.SupportedLoaders, loader) {
-				// Runs when there are no files
-				if len(v.Files) == 0 {
-					continue
-				}
+        file.DownloadUrl = []string{downloadUrl}
 
-				newHashSha1 := v.Files[0].Hashes.Sha1
-				newHashSha512 := v.Files[0].Hashes.Sha512
+        for _, v := range extractedVersionInformation {
+            if slices.Contains(v.GameVersions, version) && slices.Contains(v.SupportedLoaders, loader) {
+                if len(v.Files) > 0 {
+                    file.Hashes.Sha1 = v.Files[0].Hashes.Sha1
+                    file.Hashes.Sha512 = v.Files[0].Hashes.Sha512
+                    file.FileSize = v.Files[0].Size
+                    file.Path = fmt.Sprintf("mods/%s",v.Files[0].Filename)
+                }
+            }
+        }
+    }
 
-				fmt.Println(newHashSha1)
-				fmt.Println(newHashSha512)
-			}
-		}
-	}
+    for i := len(filesToRemove) - 1; i >= 0; i-- {
+        index := filesToRemove[i]
+        // Kuss stackoverflow
+        modpack.Files = append(modpack.Files[:index], modpack.Files[index+1:]...)
+    }
+
+    jsonOutput, err := json.MarshalIndent(modpack, "", "  ")
+    if err != nil {
+        fmt.Println("Error marshaling JSON:", err)
+        return modpack, nil
+    }
+
+    return modpack, jsonOutput
 }
