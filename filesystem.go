@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha512"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -182,4 +183,43 @@ func checkStringValidPath(path string) string {
 	}
 	doesPathExist(path)
 	return path
+}
+
+// checkMrpack verifies if the given path points to a valid .mrpack file
+func checkMrpack(path string) error {
+	noPathNoExtension := filepath.Join("modpacks", path+".mrpack")
+	pathExtension := filepath.Join("modpacks", path)
+	pathNoExtension := filepath.Join(path + ".mrpack")
+
+	// Check if "modpacks/test.mrpack" exists
+	if _, err := os.Stat(noPathNoExtension); err == nil {
+		path = noPathNoExtension
+	} else if stat, err := os.Stat(pathExtension); err == nil && stat.IsDir() {
+		path = noPathNoExtension
+	} else if stat, err := os.Stat(pathNoExtension); err == nil && stat.IsDir() {
+		path = pathNoExtension
+	}
+	// Verify the final path
+	stat, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+
+	// Ensure it's a file, not a directory
+	if stat.IsDir() {
+		return fmt.Errorf("path is a directory, not a file")
+	}
+
+	// Check the file extension
+	if filepath.Ext(stat.Name()) != ".mrpack" {
+		return errors.New("file does not have a .mrpack extension")
+	}
+
+	fmt.Println("Valid .mrpack file:", path)
+	return nil
+}
+
+func writeFile(path string, content []byte) {
+	// 0064 is the permission level
+	os.WriteFile(path, content, 0064)
 }

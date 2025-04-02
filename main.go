@@ -47,19 +47,17 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("[1] Modfiles or [2] Modpack")
 
-		var option int = 2
-		/*
-			_, err := fmt.Scanln(&option)
-			if err != nil {
-				return
-			}
-		*/
+		var option int
+		_, err := fmt.Scanln(&option)
+		if err != nil {
+			return
+		}
 
 		if option == 1 {
 			modMain()
 
 		} else if option == 2 {
-			modpackMain()
+			modpackMain("burr","1.19.2","fabric")
 		}
 	} else {
 		// Maybe Move
@@ -70,7 +68,11 @@ func main() {
 			output = checkStringValidPath(output)
 			updateAllViaArgs(version, loader, output, sha1Hashes, sha512Hashes, allFiles)
 		} else if mode == "modpack" {
-			modpackMain()
+			if loader != "fabric" {
+				fmt.Println("Sowy loder Unsuported right now >:(")
+				return
+			}
+			modpackMain(input, version, loader)
 		}
 	}
 }
