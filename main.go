@@ -21,8 +21,20 @@ func checkArgs() (string, string, string, string, string) {
 
 	// Flags
 	argMode := flag.String("mode", "mods", "Select between mods or modpacks")
+
+	// Different default loaders
+	var defaultLoader string
+	var usage string
+	if *argMode == "mods" {
+		defaultLoader = "fabric"
+		usage = "Loader for Mods"
+	} else if *argMode == "modpack" {
+		defaultLoader = ""
+		usage = "Loader for Modpacks keep empty for automatic detection"
+	}
+	argLoader := flag.String("loader", defaultLoader, usage)
+
 	argVersion := flag.String("version", latestVersion[0].Version, "Minecraft version")
-	argLoader := flag.String("loader", "fabric", "Loader")
 	argInputFolder := flag.String("input", "mods_to_update/", "Input file")
 	argOutputFolder := flag.String("output", "output/", "Output folder")
 
@@ -39,6 +51,7 @@ func checkArgs() (string, string, string, string, string) {
 }
 
 func main() {
+
 	err := checkConnection()
 	if err != nil {
 		return
@@ -80,8 +93,8 @@ func main() {
 				return
 			}
 
-			if loader != "fabric" {
-				fmt.Println("😢 Sowy! Only Fabric loader is supported right now >:(")
+			if loader != "fabric" && loader != "forge" {
+				fmt.Println("😢 Sowy! Only Fabric and Forge is supported right now >:(")
 				return
 			}
 			inputPath, err := checkMrpack(input)
@@ -113,7 +126,7 @@ func main() {
 			writeFile("temp/modrinth.index.json", formatedModpack)
 
 			os.Create(output + version + "_" + parsedModpack.Name + ".mrpack") //nolint:errcheck
-			err = zipSource("temp/", output+parsedModpack.Name+version+".mrpack ")
+			err = zipSource("temp/", output+version+"_"+parsedModpack.Name+version+".mrpack ")
 			if err != nil {
 				fmt.Println("❌ Error zipping:", err)
 				return
