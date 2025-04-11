@@ -1,7 +1,5 @@
 package main
 
-// ---- This Includes all the Code used for GET request in the Downloader ---- //
-
 import (
 	"fmt"
 	"io"
@@ -21,6 +19,8 @@ var modrinthEndpoint = EndpointMap{
 	"versionUpdate":         "https://api.modrinth.com/v2/version_file/{hash}/update",
 	"availableVersions":     "https://api.modrinth.com/v2/tag/game_version",
 	"availableLoaders":      "https://api.modrinth.com/v2/tag/loader",
+	// GRRR
+	"fabricVersions": "https://meta.fabricmc.net/v2/versions/loader",
 
 	// "search": "https://api.modrinth.com/v2/search",
 }
