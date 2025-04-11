@@ -1,7 +1,5 @@
 package main
 
-// ---- This Includes all the Code used for GET request in the Downloader ---- //
-
 import (
 	"fmt"
 	"io"
