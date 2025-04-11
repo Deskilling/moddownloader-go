@@ -42,7 +42,7 @@ func downloadMod(modName string, version string, loader string, filepath string)
 
 	downloadUrl, filename, _, err := getDownload(extractedInformation, version, loader)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to get download for file: %w", filename)
+		return "", false, fmt.Errorf("failed to get download for file: %s", filename)
 	}
 
 	err = downloadFile(downloadUrl, filepath+filename)
