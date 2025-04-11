@@ -39,19 +39,28 @@ func parseModpack(jsonData string, version string, loader string) (modpack, []by
 		return modpack, nil, fmt.Errorf("failed to unmarshal modpack: %w", err)
 	}
 
+	modpack.Dependencies["minecraft"] = version
+
+	if loader == "" {
+		if modpack.Dependencies["fabric-loader"] != "" {
+			modpack.Dependencies["fabric-loader"] = getLatestFabricVersion()
+			loader = "fabric"
+		} else if modpack.Dependencies["forge"] != "" {
+			modpack.Dependencies["forge"] = getLatestForgeVersion(version)
+			loader = "forge"
+		}
+	}
+
 	fmt.Printf("📚 Modpack Name: %s\n", modpack.Name)
 	fmt.Printf("🎮 Minecraft Version: %s\n", modpack.Dependencies["minecraft"])
 	fmt.Printf("💻 Number of Mods: %d\n", len(modpack.Files))
-
-	modpack.Dependencies["minecraft"] = version
-	modpack.Dependencies["fabric-loader"] = getLatestFabricVersion()
+	fmt.Printf("🔧 Loader: %s\n\n", loader)
 
 	var filesToRemove []int
 	var removedMods []string
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
-	fmt.Println("🔍 Checking mod compatibility with " + version + " and " + loader + "...")
 	bar := progressbar.NewOptions(len(modpack.Files),
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(false),
