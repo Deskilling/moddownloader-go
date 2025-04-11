@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"crypto/sha512"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -48,7 +47,7 @@ func isDirEmpty(path string) (bool, error) {
 	return true, nil
 }
 
-func getAllFilesFromDirectory(directory string) ([]os.DirEntry, error) {
+func getAllFilesFromDirectory(directory string, extension string) ([]os.DirEntry, error) {
 	doesExist, err := doesPathExist(directory)
 	if err != nil {
 		return nil, err
@@ -62,7 +61,7 @@ func getAllFilesFromDirectory(directory string) ([]os.DirEntry, error) {
 		var filteredFiles []os.DirEntry
 
 		for _, file := range allFiles {
-			if filepath.Ext(file.Name()) == ".jar" {
+			if filepath.Ext(file.Name()) == extension {
 				filteredFiles = append(filteredFiles, file)
 			}
 		}
@@ -91,7 +90,7 @@ func calculateHashes(filepath string) (string, string, error) {
 }
 
 func calculateAllHashesFromDirectory(directory string) ([]string, []string, []os.DirEntry, error) {
-	allFiles, err := getAllFilesFromDirectory(directory)
+	allFiles, err := getAllFilesFromDirectory(directory, ".jar")
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -181,45 +180,125 @@ func checkStringValidPath(path string) string {
 	if lastChar != "/" {
 		path += "/"
 	}
-	doesPathExist(path)
+	_, err := doesPathExist(path)
+	if err != nil {
+		return ""
+	}
 	return path
 }
 
 // checkMrpack verifies if the given path points to a valid .mrpack file
-func checkMrpack(path string) error {
-	noPathNoExtension := filepath.Join("modpacks", path+".mrpack")
-	pathExtension := filepath.Join("modpacks", path)
-	pathNoExtension := filepath.Join(path + ".mrpack")
-
-	// Check if "modpacks/test.mrpack" exists
-	if _, err := os.Stat(noPathNoExtension); err == nil {
-		path = noPathNoExtension
-	} else if stat, err := os.Stat(pathExtension); err == nil && stat.IsDir() {
-		path = noPathNoExtension
-	} else if stat, err := os.Stat(pathNoExtension); err == nil && stat.IsDir() {
-		path = pathNoExtension
-	}
-	// Verify the final path
-	stat, err := os.Stat(path)
-	if err != nil {
-		return err
+func checkMrpack(path string) (string, error) {
+	modpacksDir := "modpacks"
+	pathsToCheck := []string{
+		filepath.Join(path),                        // Default
+		filepath.Join(path + ".mrpack"),            // path.mrpack
+		filepath.Join(modpacksDir, path),           // modpacks/path
+		filepath.Join(modpacksDir, path+".mrpack"), // modpacks/path.mrpack
 	}
 
-	// Ensure it's a file, not a directory
-	if stat.IsDir() {
-		return fmt.Errorf("path is a directory, not a file")
+	var validPath string
+	for _, p := range pathsToCheck {
+		if stat, err := os.Stat(p); err == nil {
+			if stat.IsDir() {
+				if filepath.Ext(p) == ".mrpack" {
+					validPath = p
+					break
+				}
+			} else {
+				validPath = p
+				break
+			}
+		}
 	}
 
-	// Check the file extension
-	if filepath.Ext(stat.Name()) != ".mrpack" {
-		return errors.New("file does not have a .mrpack extension")
+	// If no valid path was found, return an error
+	if validPath == "" {
+		return "", fmt.Errorf("no valid .mrpack file found for path: %s", path)
 	}
 
-	fmt.Println("Valid .mrpack file:", path)
-	return nil
+	// Verify the file extension
+	if filepath.Ext(validPath) != ".mrpack" {
+		return "", fmt.Errorf("file does not have a .mrpack extension")
+	}
+
+	return validPath, nil
 }
 
 func writeFile(path string, content []byte) {
 	// 0064 is the permission level
-	os.WriteFile(path, content, 0064)
+	err := os.WriteFile(path, content, 0064)
+	if err != nil {
+		return
+	}
+}
+
+// Kuss gosamples
+func zipSource(source, target string) error {
+	// Ensure source path exists
+	if _, err := os.Stat(source); err != nil {
+		return fmt.Errorf("source path error: %w", err)
+	}
+
+	// Create target file
+	f, err := os.Create(target)
+	if err != nil {
+		return fmt.Errorf("failed to create zip file: %w", err)
+	}
+	defer f.Close()
+
+	writer := zip.NewWriter(f)
+	defer writer.Close()
+
+	// Walk through source directory
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk error: %w", err)
+		}
+
+		// Create zip header
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return fmt.Errorf("failed to create header: %w", err)
+		}
+
+		// Set compression method
+		header.Method = zip.Deflate
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(source, path)
+		if err != nil {
+			return fmt.Errorf("failed to calculate relative path: %w", err)
+		}
+		header.Name = filepath.ToSlash(relPath)
+
+		if info.IsDir() {
+			header.Name += "/"
+			header.Method = zip.Store // Don't compress directories
+		}
+
+		// Create header in zip
+		headerWriter, err := writer.CreateHeader(header)
+		if err != nil {
+			return fmt.Errorf("failed to create header in zip: %w", err)
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		// Open and copy file contents
+		f, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open file: %w", err)
+		}
+		defer f.Close()
+
+		_, err = io.Copy(headerWriter, f)
+		if err != nil {
+			return fmt.Errorf("failed to write file contents: %w", err)
+		}
+
+		return nil
+	})
 }
