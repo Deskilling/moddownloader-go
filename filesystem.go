@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -98,7 +97,7 @@ func calculateAllHashesFromDirectory(directory string) ([]string, []string, []os
 	var sha1Hashes, sha512Hashes []string
 
 	for _, file := range allFiles {
-		filePath := directory + file.Name()
+		filePath := filepath.Join(directory, file.Name())
 
 		hash1, hash512, err := calculateHashes(filePath)
 		if err != nil {
@@ -151,8 +150,8 @@ func extractZip(source, dest string) error {
 		if err != nil {
 			return err
 		}
-		name := path.Join(dest, file.Name)
-		err = os.MkdirAll(path.Dir(name), os.ModeDir)
+		name := filepath.Join(dest, file.Name)
+		err = os.MkdirAll(filepath.Dir(name), os.ModeDir)
 		if err != nil {
 			return err
 		}
@@ -161,7 +160,11 @@ func extractZip(source, dest string) error {
 			return err
 		}
 		defer create.Close()
-		create.ReadFrom(open)
+		_, err = io.Copy(create, open)
+		if err != nil {
+			return err
+		}
+		open.Close()
 	}
 	return nil
 }
@@ -176,10 +179,17 @@ func readFile(filepath string) string {
 }
 
 func checkStringValidPath(path string) string {
-	lastChar := path[len(path)-1:]
-	if lastChar != "/" {
-		path += "/"
+	// Check if path is empty
+	if len(path) == 0 {
+		return ""
 	}
+
+	// Use filepath.Separator for cross-platform compatibility
+	lastChar := path[len(path)-1:]
+	if lastChar != string(filepath.Separator) {
+		path += string(filepath.Separator)
+	}
+
 	_, err := doesPathExist(path)
 	if err != nil {
 		return ""

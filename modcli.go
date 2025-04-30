@@ -71,7 +71,4 @@ func modMain() {
 	}
 
 	updateAllViaArgs(version, loader, outputPath, sha1Hashes, sha512Hashes, allFiles)
-
-	fmt.Println("\n[Enter to exit]")
-	scanner.Scan()
 }

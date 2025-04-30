@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/schollz/progressbar/v3"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
+
+	"github.com/schollz/progressbar/v3"
 )
 
 func getDownload(extractedInformation []ModVersionInformation, version string, loader string) (string, string, bool, error) {
@@ -24,11 +26,10 @@ func getDownload(extractedInformation []ModVersionInformation, version string, l
 			return downloadUrl, filename, true, nil
 		}
 	}
-
 	return "", "", false, fmt.Errorf("idfk")
 }
 
-func downloadMod(modName string, version string, loader string, filepath string) (string, bool, error) {
+func downloadMod(modName string, version string, loader string, outputPath string) (string, bool, error) {
 	url := fmt.Sprintf(modrinthEndpoint["modVersionInformation"], modName)
 	response, err := modrinthWebRequest(url)
 	if err != nil {
@@ -45,7 +46,8 @@ func downloadMod(modName string, version string, loader string, filepath string)
 		return "", false, fmt.Errorf("failed to get download for file: %s", filename)
 	}
 
-	err = downloadFile(downloadUrl, filepath+filename)
+	downloadPath := filepath.Join(outputPath, filename)
+	err = downloadFile(downloadUrl, downloadPath)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to download file: %w", err)
 	}

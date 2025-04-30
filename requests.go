@@ -61,6 +61,16 @@ func modrinthWebRequest(endpoint string) (string, error) {
 	return string(body), nil
 }
 
+func checkConnection() error {
+	_, err := modrinthWebRequest(modrinthEndpoint["default"])
+	if err != nil {
+		fmt.Println("❌ An error occurred: Please check your internet connection, or maybe the modrinth api is down")
+		return err
+	}
+
+	return nil
+}
+
 func downloadFile(url string, filepath string) (err error) {
 	// Create the file
 	out, err := os.Create(filepath)

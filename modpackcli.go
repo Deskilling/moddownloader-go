@@ -67,7 +67,7 @@ func modpackMain() {
 
 	} else if len(directory) == 1 {
 		fmt.Println("✅ Found one modpack. Using it automatically: " + directory[0].Name())
-		inputPath = inputPath + directory[0].Name()
+		inputPath = filepath.Join(inputPath, directory[0].Name())
 
 	} else if len(directory) > 1 {
 		fmt.Println("🔍 Multiple modpacks found. Please select one:")
@@ -79,17 +79,19 @@ func modpackMain() {
 
 		scanner.Scan()
 		option, _ := strconv.Atoi(scanner.Text())
-		inputPath = inputPath + directory[option-1].Name()
+		inputPath = filepath.Join(inputPath, directory[option-1].Name())
 	}
 
 	fmt.Println("📂 Extracting modpack...")
-	err = extractZip(inputPath, "temp/")
+	// Use a proper temp directory path with platform-specific separator
+	tempDir := "temp" + string(filepath.Separator)
+	err = extractZip(inputPath, tempDir)
 	if err != nil {
 		fmt.Println("❌ Error extracting zip:", err)
 		return
 	}
 
-	modpackContent := readFile("temp/modrinth.index.json")
+	modpackContent := readFile(filepath.Join("temp", "modrinth.index.json"))
 	err = checkOutputPath(outputPath)
 	if err != nil {
 		fmt.Println("❌ Error checking/creating output folder:", err)
@@ -102,17 +104,19 @@ func modpackMain() {
 		fmt.Println("❌ Error parsing modpack:", err)
 		return
 	}
-	writeFile("temp/modrinth.index.json", formatedModpack)
+	writeFile(filepath.Join("temp", "modrinth.index.json"), formatedModpack)
 
-	outputFile := outputPath + version + "_" + parsedModpack.Name + ".mrpack"
+	// Use filepath.Join for cross-platform compatibility
+	outputFile := filepath.Join(outputPath, version+"_"+parsedModpack.Name+".mrpack")
 	os.Create(outputFile)
-	err = zipSource("temp/", outputFile)
+
+	// Use filepath.Join for the source directory
+	sourceDir := "temp" + string(filepath.Separator)
+	err = zipSource(sourceDir, outputFile)
 	if err != nil {
 		fmt.Println("❌ Error zipping:", err)
 		return
 	}
 
-	fmt.Println("✅ Modpack successfully created at: " + outputFile)
-	fmt.Println("\n[Enter to exit]")
-	scanner.Scan()
+	fmt.Printf("✅ Modpack successfully created at: %s\n", outputFile)
 }

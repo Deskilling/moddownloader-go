@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/schollz/progressbar/v3"
 	"slices"
 	"sort"
 	"sync"
+
+	"github.com/schollz/progressbar/v3"
 )
 
 type modpack struct {
