@@ -20,7 +20,6 @@ func projectIdToTitle(projectId string) (string, error) {
 	return extractedInformation.ProjectTitle, nil
 }
 
-// 2 in 1 bad but juckt
 type Version struct {
 	Version     string `json:"version"`
 	VersionType string `json:"version_type"`

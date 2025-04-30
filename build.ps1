@@ -6,17 +6,38 @@ if (!(Test-Path -Path $OUTPUT_DIR)) {
 }
 
 $PLATFORMS = @(
-    "windows/amd64",
-    "linux/amd64"
+    "linux/amd64",    # Linux 64-bit
+    "darwin/amd64",   # macOS 64-bit (Intel)
+    "darwin/arm64",   # macOS 64-bit (Apple Silicon)
+    "windows/amd64"   # Windows 64-bit
 )
 
 foreach ($PLATFORM in $PLATFORMS) {
     $parts = $PLATFORM -split "/"
     $GOOS = $parts[0]
     $GOARCH = $parts[1]
-    
-    $OUTPUT_NAME = "$OUTPUT_DIR/$BINARY_NAME-$GOOS-$GOARCH"
-    if ($GOOS -eq "windows") {
+	
+	$PLATFORMNAME = $GOOS
+	$ARCHNAME = $GOARCH
+    if ($PLATFORMNAME -eq "darwin") {
+        $PLATFORMNAME = "macos"
+		
+        if ($ARCHNAME -eq "amd64") {
+            $ARCHNAME = "intel"
+        } 
+		
+        if ($ARCHNAME -eq "arm64") {
+            $ARCHNAME = "silicon"
+        }
+    }
+	
+	if ($ARCHNAME -eq "amd64") {
+		$ARCHNAME = "x64"
+	}
+	    	
+    $OUTPUT_NAME = "$OUTPUT_DIR/$BINARY_NAME-$PLATFORMNAME-$ARCHNAME"
+	
+	if ($GOOS -eq "windows") {
         $OUTPUT_NAME += ".exe"
     }
 
