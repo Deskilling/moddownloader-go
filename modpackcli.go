@@ -48,11 +48,12 @@ func modpackMain() {
 		version = latestVersion
 	}
 
-	fmt.Print("🔧 Enter Loader (default: Fabric) ➔  ")
+	fmt.Print("🔧 Enter Loader (default: From Modpack) ➔  ")
 	scanner.Scan()
 	loader := scanner.Text()
 	if loader == "" {
-		loader = "fabric"
+		// Bruh
+		loader = ""
 	}
 
 	fmt.Println("\n📦 Select Modpack:")

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 // The map for the different endpoints <- probabbly useless but it looks cool
@@ -19,8 +21,6 @@ var modrinthEndpoint = EndpointMap{
 	"versionUpdate":         "https://api.modrinth.com/v2/version_file/{hash}/update",
 	"availableVersions":     "https://api.modrinth.com/v2/tag/game_version",
 	"availableLoaders":      "https://api.modrinth.com/v2/tag/loader",
-	// GRRR
-	"fabricVersions": "https://meta.fabricmc.net/v2/versions/loader",
 
 	// "search": "https://api.modrinth.com/v2/search",
 }
@@ -100,4 +100,55 @@ func downloadFile(url string, filepath string) (err error) {
 	}
 
 	return nil
+}
+
+func getLatestFabricVersion() string {
+	response, err := modrinthWebRequest("https://meta.fabricmc.net/v2/versions/loader")
+	if err != nil {
+		panic(err)
+	}
+
+	var fabricVersion []Version
+	err = json.Unmarshal([]byte(response), &fabricVersion)
+	if err != nil {
+		panic(err)
+	}
+	return fabricVersion[0].Version
+}
+
+func getLatestForgeVersion(version string) string {
+	url := fmt.Sprintf("https://files.minecraftforge.net/net/minecraftforge/forge/index_%s.html", version)
+	response, err := modrinthWebRequest(url)
+	if err != nil {
+		return ""
+	}
+
+	content := response
+
+	downloadsIndex := strings.Index(content, `<div class="downloads">`)
+	if downloadsIndex == -1 {
+		fmt.Println("❌ Could not find downloads section")
+		return ""
+	}
+
+	smallIndex := strings.Index(content[downloadsIndex:], "<small>")
+	if smallIndex == -1 {
+		fmt.Println("❌ Could not find version information")
+		return ""
+	}
+
+	versionStart := downloadsIndex + smallIndex + 7
+	versionEnd := strings.Index(content[versionStart:], "</small>")
+	if versionEnd == -1 {
+		return ""
+	}
+
+	versionString := content[versionStart : versionStart+versionEnd]
+
+	parts := strings.Split(versionString, " - ")
+	if len(parts) != 2 {
+		return ""
+	}
+
+	return parts[1]
 }
