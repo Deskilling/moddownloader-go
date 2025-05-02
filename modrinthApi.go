@@ -26,7 +26,7 @@ type Version struct {
 	//Major       bool   `json:"major"`
 
 	// Fabric Specific
-	Build int `json:"build"`
+	Build  int  `json:"build"`
 	Stable bool `json:"stable"`
 }
 
@@ -50,18 +50,4 @@ func getReleaseVersions() ([]Version, error) {
 	}
 
 	return releaseVersions, nil
-}
-
-func getLatestFabricVersion() string {
-	response, err := modrinthWebRequest(modrinthEndpoint["fabricVersions"])
-	if err != nil {
-		panic(err)
-	}
-
-	var fabricVersion []Version
-	err = json.Unmarshal([]byte(response),&fabricVersion)
-	if err != nil {
-		panic(err)
-	}
-	return fabricVersion[0].Version
 }
