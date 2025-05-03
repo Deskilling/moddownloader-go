@@ -159,3 +159,16 @@ func updateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 
 	fmt.Println("\n\n✅ All downloads completed.")
 }
+
+// To download all the mods for the export to .minecraft
+func downloadALlModpack(path, version, loader string) {
+	extractZip(path, "temp/")
+	jsonData := readFile("temp/modrinth.index.json")
+	modpackData, _, _ := parseModpack(jsonData, version, loader)
+
+	for i, v := range modpackData.Files {
+		fmt.Println(i)
+		fmt.Println(v)
+
+	}
+}

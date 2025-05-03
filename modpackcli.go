@@ -84,9 +84,13 @@ func modpackMain() {
 	}
 
 	fmt.Println("📂 Extracting modpack...")
-	// Use a proper temp directory path with platform-specific separator
-	tempDir := "temp" + string(filepath.Separator)
-	err = extractZip(inputPath, tempDir)
+
+	err = checkOutputPath("temp/")
+	if err != nil {
+		return
+	}
+
+	err = extractZip(inputPath, "temp/")
 	if err != nil {
 		fmt.Println("❌ Error extracting zip:", err)
 		return

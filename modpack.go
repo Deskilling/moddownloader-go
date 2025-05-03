@@ -49,6 +49,10 @@ func parseModpack(jsonData string, version string, loader string) (modpack, []by
 		} else if modpack.Dependencies["forge"] != "" {
 			modpack.Dependencies["forge"] = getLatestForgeVersion(version)
 			loader = "forge"
+			// not checked but hopefully
+		} else if modpack.Dependencies["quilt-loader"] != "" {
+			modpack.Dependencies["quilt-loader"] = getLatestQuiltVersion()
+			loader = "quilt"
 		}
 	}
 

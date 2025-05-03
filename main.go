@@ -1,27 +1,32 @@
 package main
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-)
+import "fmt"
 
 func main() {
-	file := getLauncherProfiles()
-	parseLauncherProfiles(file)
+	downloadALlModpack("modpacks/EumelcraftPack.mrpack", "1.21.5", "fabric")
+	fmt.Println(getLatestQuiltVersion())
+	file, _ := getLauncherProfiles()
+	ewaoiurhgn := parseLauncherProfiles(file)
 
-	err := checkConnection()
-	if err != nil {
-		return
-	}
+	profileAdd(ewaoiurhgn, "fabric", "1.21.5", "schwanzred")
 
-	if len(os.Args) < 2 {
-		cliMain()
-	} else {
-		runArgs()
-	}
+	checkOutputPath("test/temp")
+	exportModpack("modpacks/EumelcraftPack.mrpack", "test/temp")
 
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("\n[Enter to exit]")
-	scanner.Scan()
+	/*
+			err := checkConnection()
+			if err != nil {
+				return
+			}
+
+			if len(os.Args) < 2 {
+				cliMain()
+			} else {
+				runArgs()
+			}
+		scanner := bufio.NewScanner(os.Stdin)
+		fmt.Println("\n[Enter to exit]")
+		scanner.Scan()
+
+	*/
 }

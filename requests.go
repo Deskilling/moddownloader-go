@@ -116,6 +116,21 @@ func getLatestFabricVersion() string {
 	return fabricVersion[0].Version
 }
 
+// may be changed in the future (on quilts side)
+func getLatestQuiltVersion() string {
+	response, err := modrinthWebRequest("https://meta.quiltmc.org/v3/versions/loader")
+	if err != nil {
+		panic(err)
+	}
+
+	var quiltVersions []Version
+	err = json.Unmarshal([]byte(response), &quiltVersions)
+	if err != nil {
+		panic(err)
+	}
+	return quiltVersions[0].Version
+}
+
 func getLatestForgeVersion(version string) string {
 	url := fmt.Sprintf("https://files.minecraftforge.net/net/minecraftforge/forge/index_%s.html", version)
 	response, err := modrinthWebRequest(url)
