@@ -61,8 +61,8 @@ func runArgs() {
 			return
 		}
 
-		if loader != "fabric" && loader != "forge" {
-			fmt.Println("😢 Sowy! Only Fabric and Forge is supported right now >:(")
+		if loader != "fabric" && loader != "forge" && loader != "quilt" {
+			fmt.Println("😢 Sowy! Only Fabric, Forge and Quilt are supported right now >:(")
 			return
 		}
 		inputPath, err := checkMrpack(input)
