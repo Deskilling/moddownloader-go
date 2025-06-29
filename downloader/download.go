@@ -1,4 +1,4 @@
-package main
+package downloader
 
 import (
 	"fmt"
@@ -7,53 +7,39 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/schollz/progressbar/v3"
+	"github.com/deskilling/moddownloader-go/extract"
+	"github.com/deskilling/moddownloader-go/filesystem"
+	"github.com/deskilling/moddownloader-go/modpack"
+	"github.com/deskilling/moddownloader-go/request"
 )
 
-func getDownload(extractedInformation []ModVersionInformation, version string, loader string) (string, string, bool, error) {
-	// _ is here the index of the current value and i the index of the current position
-	for _, v := range extractedInformation {
-		// in the slice from i is the GameVersion and Loder if not loop
-		if slices.Contains(v.GameVersions, version) && slices.Contains(v.SupportedLoaders, loader) {
-			// Runs when there are no files
-			if len(v.Files) == 0 {
-				return "", "", true, fmt.Errorf("no files available")
-			}
-
-			downloadUrl := v.Files[0].URL
-			filename := v.Files[0].Filename
-
-			return downloadUrl, filename, true, nil
-		}
-	}
-	return "", "", false, fmt.Errorf("idfk")
-}
+// TODO - Add a progress bar for the download
 
 func downloadMod(modName string, version string, loader string, outputPath string) (string, bool, error) {
-	url := fmt.Sprintf(modrinthEndpoint["modVersionInformation"], modName)
-	response, err := modrinthWebRequest(url)
+	url := fmt.Sprintf(request.ModrinthEndpoint["modVersionInformation"], modName)
+	response, err := request.ModrinthWebRequest(url)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to fetch mod version info: %w", err)
 	}
 
-	extractedInformation, err := extractVersionInformation(response)
+	extractedInformation, err := extract.Version(response)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to parse mod version info: %w", err)
 	}
 
-	downloadUrl, filename, _, err := getDownload(extractedInformation, version, loader)
+	downloadUrl, filename, _, err := extract.GetDownload(extractedInformation, version, loader)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get download for file: %s", filename)
 	}
 
 	downloadPath := filepath.Join(outputPath, filename)
-	err = downloadFile(downloadUrl, downloadPath)
+	err = request.DownloadFile(downloadUrl, downloadPath)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to download file: %w", err)
 	}
 
-	// To convert the Id into the Title
-	projectName, err := projectIdToTitle(modName)
+	// To convert the ID into the Title
+	projectName, err := request.ProjectIdToTitle(modName)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get project title: %w", err)
 	}
@@ -62,13 +48,13 @@ func downloadMod(modName string, version string, loader string, outputPath strin
 }
 
 func downloadViaHash(hash string, version string, loader string, filepath string) (string, bool, error) {
-	url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hash)
-	response, err := modrinthWebRequest(url)
+	url := fmt.Sprintf(request.ModrinthEndpoint["versionFileHash"], hash)
+	response, err := request.ModrinthWebRequest(url)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to fetch version info via hash: %w", err)
 	}
 
-	extractedInformation, err := extractVersionHashInformation(response)
+	extractedInformation, err := extract.VersionHash(response)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to parse version info via hash: %w", err)
 	}
@@ -81,7 +67,7 @@ func downloadViaHash(hash string, version string, loader string, filepath string
 	return modName, true, nil
 }
 
-func updateAllViaArgs(version string, loader string, outputPath string, sha1Hashes []string, sha512Hashes []string, allFiles []os.DirEntry) {
+func UpdateAllViaArgs(version string, loader string, outputPath string, sha1Hashes []string, sha512Hashes []string, allFiles []os.DirEntry) {
 	fmt.Printf("\n🎮Version: %s\n", version)
 	fmt.Printf("🔧Loader: %s\n", loader)
 
@@ -95,17 +81,6 @@ func updateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 	var downloadedMods []string
 	var failedMods []string
 
-	bar := progressbar.NewOptions(int(len(sha1Hashes)),
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionShowBytes(false),
-		progressbar.OptionSetWidth(50),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[green]=[reset]",
-			SaucerHead:    "[green]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}))
 	for indexSha1, atIndexSha1 := range sha1Hashes {
 		// Increment WaitGroup counter
 		wg.Add(1)
@@ -120,12 +95,11 @@ func updateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 				if err != nil || !status {
 					mu.Lock()
 					if modName == "" {
-						modName = string(allFiles[index].Name())
+						modName = allFiles[index].Name()
 					}
 					failedMods = append(failedMods, modName)
 					//fmt.Printf("❌ Failed: %s\n", modName)
 					mu.Unlock()
-					bar.Add(1)
 					// Return is used to exit the goroutine
 					return
 				}
@@ -134,7 +108,6 @@ func updateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 			//fmt.Println("✅ Downloaded:", modName)
 			downloadedMods = append(downloadedMods, modName)
 			mu.Unlock()
-			bar.Add(1)
 
 		}(indexSha1, atIndexSha1)
 	}
@@ -162,9 +135,13 @@ func updateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 
 // To download all the mods for the export to .minecraft
 func downloadALlModpack(path, version, loader string) {
-	extractZip(path, "temp/")
-	jsonData := readFile("temp/modrinth.index.json")
-	modpackData, _, _ := parseModpack(jsonData, version, loader)
+	err := filesystem.ExtractZip(path, "temp/")
+	if err != nil {
+		panic(err)
+	}
+
+	jsonData := filesystem.ReadFile("temp/modrinth.index.json")
+	modpackData, _, _ := modpack.ParseModpack(jsonData, version, loader)
 
 	for i, v := range modpackData.Files {
 		fmt.Println(i)

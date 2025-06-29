@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"bufio"
@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/deskilling/moddownloader-go/filesystem"
+	"github.com/deskilling/moddownloader-go/modpack"
+	"github.com/deskilling/moddownloader-go/request"
 )
 
 func modpackMain() {
 	var outputPath string = "output/"
 
-	err := checkOutputPath(outputPath)
+	err := filesystem.CheckOutputPath(outputPath)
 	if err != nil {
 		fmt.Printf("❌ Error checking/creating %s:%s\n", outputPath, err)
 		return
@@ -19,7 +23,7 @@ func modpackMain() {
 
 	var inputPath string = "modpacks/"
 
-	status, err := doesPathExist(inputPath)
+	status, err := filesystem.DoesPathExist(inputPath)
 	if err != nil {
 		fmt.Printf("❌ Error checking/creating %s: %s\n", inputPath, err)
 		return
@@ -34,7 +38,7 @@ func modpackMain() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	// gets lates minecraft version
-	modrinthVersions, err := getReleaseVersions()
+	modrinthVersions, err := request.GetReleaseVersions()
 	if err != nil {
 		return
 	}
@@ -57,7 +61,7 @@ func modpackMain() {
 	}
 
 	fmt.Println("\n📦 Select Modpack:")
-	directory, err := getAllFilesFromDirectory(inputPath, ".mrpack")
+	directory, err := filesystem.GetAllFilesFromDirectory(inputPath, ".mrpack")
 	if err != nil {
 		return
 	}
@@ -85,31 +89,31 @@ func modpackMain() {
 
 	fmt.Println("📂 Extracting modpack...")
 
-	err = checkOutputPath("temp/")
+	err = filesystem.CheckOutputPath("temp/")
 	if err != nil {
 		return
 	}
 
-	err = extractZip(inputPath, "temp/")
+	err = filesystem.ExtractZip(inputPath, "temp/")
 	if err != nil {
 		fmt.Println("❌ Error extracting zip:", err)
 		return
 	}
 
-	modpackContent := readFile(filepath.Join("temp", "modrinth.index.json"))
-	err = checkOutputPath(outputPath)
+	modpackContent := filesystem.ReadFile(filepath.Join("temp", "modrinth.index.json"))
+	err = filesystem.CheckOutputPath(outputPath)
 	if err != nil {
 		fmt.Println("❌ Error checking/creating output folder:", err)
 		return
 	}
 
 	fmt.Println("🔍 Parsing modpack...")
-	parsedModpack, formatedModpack, err := parseModpack(modpackContent, version, loader)
+	parsedModpack, formatedModpack, err := modpack.ParseModpack(modpackContent, version, loader)
 	if err != nil {
 		fmt.Println("❌ Error parsing modpack:", err)
 		return
 	}
-	writeFile(filepath.Join("temp", "modrinth.index.json"), formatedModpack)
+	filesystem.WriteFile(filepath.Join("temp", "modrinth.index.json"), formatedModpack)
 
 	// Use filepath.Join for cross-platform compatibility
 	outputFile := filepath.Join(outputPath, version+"_"+parsedModpack.Name+".mrpack")
@@ -117,7 +121,7 @@ func modpackMain() {
 
 	// Use filepath.Join for the source directory
 	sourceDir := "temp" + string(filepath.Separator)
-	err = zipSource(sourceDir, outputFile)
+	err = filesystem.ZipSource(sourceDir, outputFile)
 	if err != nil {
 		fmt.Println("❌ Error zipping:", err)
 		return
