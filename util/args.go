@@ -15,13 +15,16 @@ func CheckArgs() (string, string, string, string, string) {
 	// Different default loaders
 	var defaultLoader string
 	var usage string
-	if *argMode == "mods" {
+
+	switch *argMode {
+	case "mods":
 		defaultLoader = "fabric"
 		usage = "Loader for Mods"
-	} else if *argMode == "modpack" {
+	case "modpack":
 		defaultLoader = ""
 		usage = "Loader for Modpacks keep empty for automatic detection"
 	}
+
 	argLoader := flag.String("loader", defaultLoader, usage)
 
 	argVersion := flag.String("version", latestVersion[0].Version, "Minecraft version")
