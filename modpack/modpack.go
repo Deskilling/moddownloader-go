@@ -1,38 +1,18 @@
-package main
+package modpack
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/schollz/progressbar/v3"
 	"slices"
 	"sort"
 	"sync"
+
+	"github.com/deskilling/moddownloader-go/extract"
+	"github.com/deskilling/moddownloader-go/request"
 )
 
-type modpack struct {
-	Dependencies  map[string]string `json:"dependencies"`
-	Files         []file            `json:"files"`
-	FormatVersion int               `json:"formatVersion"`
-	Game          string            `json:"game"`
-	Name          string            `json:"name"`
-	VersionId     string            `json:"versionId"`
-}
-
-type file struct {
-	DownloadUrl []string          `json:"downloads"`
-	Env         map[string]string `json:"env"`
-	FileSize    int               `json:"fileSize"`
-	Hashes      hashes            `json:"hashes"`
-	Path        string            `json:"path"`
-}
-
-type hashes struct {
-	Sha1   string `json:"sha1"`
-	Sha512 string `json:"sha512"`
-}
-
-func parseModpack(jsonData string, version string, loader string) (modpack, []byte, error) {
-	var modpack modpack
+func ParseModpack(jsonData string, version string, loader string) (Modpack, []byte, error) {
+	var modpack Modpack
 	err := json.Unmarshal([]byte(jsonData), &modpack)
 	if err != nil {
 		fmt.Println("❌ Error unmarshalling JSON:", err)
@@ -43,11 +23,23 @@ func parseModpack(jsonData string, version string, loader string) (modpack, []by
 
 	if loader == "" {
 		if modpack.Dependencies["fabric-loader"] != "" {
+<<<<<<< HEAD:modpack/modpack.go
+			modpack.Dependencies["fabric-loader"] = request.GetLatestFabricVersion()
+			loader = "fabric"
+		} else if modpack.Dependencies["forge"] != "" {
+			modpack.Dependencies["forge"] = request.GetLatestForgeVersion(version)
+			loader = "forge"
+			// not checked but hopefully
+		} else if modpack.Dependencies["quilt-loader"] != "" {
+			modpack.Dependencies["quilt-loader"] = request.GetLatestQuiltVersion()
+			loader = "quilt"
+=======
 			modpack.Dependencies["fabric-loader"] = getLatestFabricVersion()
 			loader = "fabric"
 		} else if modpack.Dependencies["forge"] != "" {
 			modpack.Dependencies["forge"] = getLatestForgeVersion(version)
 			loader = "forge"
+>>>>>>> main:modpack.go
 		}
 	}
 
@@ -61,6 +53,8 @@ func parseModpack(jsonData string, version string, loader string) (modpack, []by
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
+<<<<<<< HEAD:modpack/modpack.go
+=======
 	bar := progressbar.NewOptions(len(modpack.Files),
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(false),
@@ -73,45 +67,45 @@ func parseModpack(jsonData string, version string, loader string) (modpack, []by
 			BarEnd:        "]",
 		}))
 
+>>>>>>> main:modpack.go
 	for i := 0; i < len(modpack.Files); i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			defer bar.Add(1)
 
 			// Directly Modify
 			file := &modpack.Files[i]
 			hashSha1 := file.Hashes.Sha1
 			hashSha512 := file.Hashes.Sha512
 
-			url := fmt.Sprintf(modrinthEndpoint["versionFileHash"], hashSha1)
-			response, err := modrinthWebRequest(url)
+			url := fmt.Sprintf(request.ModrinthEndpoint["versionFileHash"], hashSha1)
+			response, err := request.ModrinthWebRequest(url)
 			if err != nil {
-				url = fmt.Sprintf(modrinthEndpoint["versionFileHash"], hashSha512)
-				response, err = modrinthWebRequest(url)
+				url = fmt.Sprintf(request.ModrinthEndpoint["versionFileHash"], hashSha512)
+				response, err = request.ModrinthWebRequest(url)
 				if err != nil {
 					return
 				}
 			}
 
-			extractedHashInformation, err := extractVersionHashInformation(response)
+			extractedHashInformation, err := extract.VersionHash(response)
 			if err != nil {
 				return
 			}
 
 			projectId := extractedHashInformation.ProjectId
-			url = fmt.Sprintf(modrinthEndpoint["modVersionInformation"], projectId)
-			response, err = modrinthWebRequest(url)
+			url = fmt.Sprintf(request.ModrinthEndpoint["modVersionInformation"], projectId)
+			response, err = request.ModrinthWebRequest(url)
 			if err != nil {
 				return
 			}
 
-			extractedVersionInformation, err := extractVersionInformation(response)
+			extractedVersionInformation, err := extract.Version(response)
 			if err != nil {
 				return
 			}
 
-			downloadUrl, _, _, _ := getDownload(extractedVersionInformation, version, loader)
+			downloadUrl, _, _, _ := extract.GetDownload(extractedVersionInformation, version, loader)
 			if downloadUrl == "" {
 				mu.Lock()
 				filesToRemove = append(filesToRemove, i)

@@ -1,15 +1,19 @@
-package main
+package cli
 
 import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/deskilling/moddownloader-go/downloader"
+	"github.com/deskilling/moddownloader-go/filesystem"
+	"github.com/deskilling/moddownloader-go/request"
 )
 
 func modMain() {
 	var outputPath string = "output/"
 
-	err := checkOutputPath(outputPath)
+	err := filesystem.CheckOutputPath(outputPath)
 	if err != nil {
 		fmt.Printf("❌ Error checking/creating %s:%s\n", outputPath, err)
 		return
@@ -17,7 +21,7 @@ func modMain() {
 
 	var inputPath string = "mods_to_update/"
 
-	status, err := doesPathExist(inputPath)
+	status, err := filesystem.DoesPathExist(inputPath)
 	if err != nil {
 		fmt.Printf("❌ Error checking/creating %s: %s\n", inputPath, err)
 		return
@@ -32,9 +36,9 @@ func modMain() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	// gets lates minecraft version
-	modrinthVersions, err := getReleaseVersions()
+	modrinthVersions, err := request.GetReleaseVersions()
 	if err != nil {
-		return
+		panic(err)
 	}
 	latestVersion := modrinthVersions[0].Version
 
@@ -42,7 +46,6 @@ func modMain() {
 	scanner.Scan()
 	version := scanner.Text()
 	if version == "" {
-
 		version = latestVersion
 	}
 
@@ -57,7 +60,7 @@ func modMain() {
 	scanner.Scan()
 
 	fmt.Println("🔍 Calculating hashes for your mods...⌛")
-	sha1Hashes, sha512Hashes, allFiles, err := calculateAllHashesFromDirectory(inputPath)
+	sha1Hashes, sha512Hashes, allFiles, err := filesystem.CalculateAllHashesFromDirectory(inputPath)
 	if err != nil {
 		fmt.Println("Error calculating file hashes:", err)
 		return
@@ -70,8 +73,5 @@ func modMain() {
 		fmt.Printf("✅ Found %d mods to update!\n\n", len(sha1Hashes))
 	}
 
-	updateAllViaArgs(version, loader, outputPath, sha1Hashes, sha512Hashes, allFiles)
-
-	fmt.Println("\n[Enter to exit]")
-	scanner.Scan()
+	downloader.UpdateAllViaArgs(version, loader, outputPath, sha1Hashes, sha512Hashes, allFiles)
 }

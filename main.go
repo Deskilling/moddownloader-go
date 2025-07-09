@@ -1,11 +1,25 @@
 package main
 
 import (
-	"flag"
+	"bufio"
 	"fmt"
 	"os"
+	"runtime"
+
+	"github.com/deskilling/moddownloader-go/cli"
+	"github.com/deskilling/moddownloader-go/util"
 )
 
+<<<<<<< HEAD
+func main() {
+	// only macos needs sudo perms ...
+	if runtime.GOOS == "darwin" {
+		if !util.IsRunningAsRoot() {
+			fmt.Println("Trying to Relauch with Sudo")
+			util.Relaunch()
+			return
+		}
+=======
 func checkConnection() error {
 	_, err := modrinthWebRequest(modrinthEndpoint["default"])
 	if err != nil {
@@ -55,25 +69,15 @@ func main() {
 	err := checkConnection()
 	if err != nil {
 		return
+>>>>>>> main
 	}
 
 	if len(os.Args) < 2 {
-		fmt.Println("🚀 Welcome to Mod Downloader! Choose an option:")
-		fmt.Println("[1] 📦 Mod Files")
-		fmt.Println("[2] 🎮 Modpack")
-		var option int
-		_, err := fmt.Scanln(&option)
-		if err != nil {
-			return
-		}
-
-		if option == 1 {
-			modMain()
-
-		} else if option == 2 {
-			modpackMain()
-		}
+		cli.CliMain()
 	} else {
+<<<<<<< HEAD
+		util.CheckArgs()
+=======
 		// Maybe Move
 		version, loader, input, output, mode := checkArgs()
 		if mode == "mods" {
@@ -133,5 +137,10 @@ func main() {
 			}
 			fmt.Println("✅ Modpack successfully created at: " + output + parsedModpack.Name + version + ".mrpack")
 		}
+>>>>>>> main
 	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("\n[Enter to exit]")
+	scanner.Scan()
 }
