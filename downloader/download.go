@@ -17,7 +17,7 @@ import (
 
 func downloadMod(modName string, version string, loader string, outputPath string) (string, bool, error) {
 	url := fmt.Sprintf(request.ModrinthEndpoint["modVersionInformation"], modName)
-	response, err := request.ModrinthWebRequest(url)
+	response, err := request.Request(url)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to fetch mod version info: %w", err)
 	}
@@ -38,7 +38,6 @@ func downloadMod(modName string, version string, loader string, outputPath strin
 		return "", false, fmt.Errorf("failed to download file: %w", err)
 	}
 
-	// To convert the ID into the Title
 	projectName, err := request.ProjectIdToTitle(modName)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get project title: %w", err)
@@ -49,7 +48,7 @@ func downloadMod(modName string, version string, loader string, outputPath strin
 
 func downloadViaHash(hash string, version string, loader string, filepath string) (string, bool, error) {
 	url := fmt.Sprintf(request.ModrinthEndpoint["versionFileHash"], hash)
-	response, err := request.ModrinthWebRequest(url)
+	response, err := request.Request(url)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to fetch version info via hash: %w", err)
 	}
@@ -71,9 +70,7 @@ func UpdateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 	fmt.Printf("\n🎮Version: %s\n", version)
 	fmt.Printf("🔧Loader: %s\n", loader)
 
-	// To wait for goroutine
 	var wg sync.WaitGroup
-	// a lock kinda
 	var mu sync.Mutex
 
 	fmt.Println("\n📡 Downloading mods...")
@@ -82,11 +79,9 @@ func UpdateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 	var failedMods []string
 
 	for indexSha1, atIndexSha1 := range sha1Hashes {
-		// Increment WaitGroup counter
 		wg.Add(1)
 
 		go func(index int, sha1 string) {
-			// Decrement counter when goroutine completes
 			defer wg.Done()
 
 			modName, status, err := downloadViaHash(sha1, version, loader, outputPath)
@@ -98,21 +93,17 @@ func UpdateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 						modName = allFiles[index].Name()
 					}
 					failedMods = append(failedMods, modName)
-					//fmt.Printf("❌ Failed: %s\n", modName)
 					mu.Unlock()
-					// Return is used to exit the goroutine
 					return
 				}
 			}
 			mu.Lock()
-			//fmt.Println("✅ Downloaded:", modName)
 			downloadedMods = append(downloadedMods, modName)
 			mu.Unlock()
 
 		}(indexSha1, atIndexSha1)
 	}
 
-	// Wait for all downloads to finish
 	wg.Wait()
 
 	fmt.Print("\n\n")
@@ -133,8 +124,7 @@ func UpdateAllViaArgs(version string, loader string, outputPath string, sha1Hash
 	fmt.Println("\n\n✅ All downloads completed.")
 }
 
-// To download all the mods for the export to .minecraft
-func downloadALlModpack(path, version, loader string) {
+func downloadAllModpack(path, version, loader string) {
 	err := filesystem.ExtractZip(path, "temp/")
 	if err != nil {
 		panic(err)

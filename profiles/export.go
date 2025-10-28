@@ -21,7 +21,7 @@ func exportModpack(modpackPath string, launcherPath string) {
 
 	err = filesystem.ExtractZip(modpackPath, "temp/")
 	if err != nil {
-		fmt.Println("❌ Error extracting zip:", err)
+		fmt.Println("Error extracting zip:", err)
 		return
 	}
 

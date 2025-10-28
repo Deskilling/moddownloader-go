@@ -23,7 +23,6 @@ func ParseModpack(jsonData string, version string, loader string) (Modpack, []by
 
 	if loader == "" {
 		if modpack.Dependencies["fabric-loader"] != "" {
-<<<<<<< HEAD:modpack/modpack.go
 			modpack.Dependencies["fabric-loader"] = request.GetLatestFabricVersion()
 			loader = "fabric"
 		} else if modpack.Dependencies["forge"] != "" {
@@ -33,13 +32,6 @@ func ParseModpack(jsonData string, version string, loader string) (Modpack, []by
 		} else if modpack.Dependencies["quilt-loader"] != "" {
 			modpack.Dependencies["quilt-loader"] = request.GetLatestQuiltVersion()
 			loader = "quilt"
-=======
-			modpack.Dependencies["fabric-loader"] = getLatestFabricVersion()
-			loader = "fabric"
-		} else if modpack.Dependencies["forge"] != "" {
-			modpack.Dependencies["forge"] = getLatestForgeVersion(version)
-			loader = "forge"
->>>>>>> main:modpack.go
 		}
 	}
 
@@ -53,21 +45,6 @@ func ParseModpack(jsonData string, version string, loader string) (Modpack, []by
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
-<<<<<<< HEAD:modpack/modpack.go
-=======
-	bar := progressbar.NewOptions(len(modpack.Files),
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionShowBytes(false),
-		progressbar.OptionSetWidth(50),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[green]=[reset]",
-			SaucerHead:    "[green]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}))
-
->>>>>>> main:modpack.go
 	for i := 0; i < len(modpack.Files); i++ {
 		wg.Add(1)
 		go func(i int) {
@@ -79,10 +56,10 @@ func ParseModpack(jsonData string, version string, loader string) (Modpack, []by
 			hashSha512 := file.Hashes.Sha512
 
 			url := fmt.Sprintf(request.ModrinthEndpoint["versionFileHash"], hashSha1)
-			response, err := request.ModrinthWebRequest(url)
+			response, err := request.Request(url)
 			if err != nil {
 				url = fmt.Sprintf(request.ModrinthEndpoint["versionFileHash"], hashSha512)
-				response, err = request.ModrinthWebRequest(url)
+				response, err = request.Request(url)
 				if err != nil {
 					return
 				}
@@ -95,7 +72,7 @@ func ParseModpack(jsonData string, version string, loader string) (Modpack, []by
 
 			projectId := extractedHashInformation.ProjectId
 			url = fmt.Sprintf(request.ModrinthEndpoint["modVersionInformation"], projectId)
-			response, err = request.ModrinthWebRequest(url)
+			response, err = request.Request(url)
 			if err != nil {
 				return
 			}

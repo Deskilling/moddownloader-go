@@ -7,9 +7,6 @@ import (
 
 func Mod(modData string) (ModInformation, error) {
 	var info ModInformation
-	// Umarshal converts the json data into a Go Struct.
-	// byte converts the modData json into a byte slice, this is required for Unmarshal
-	// Then there is the pointer to the struct which then searches the byte slice and sets the values in the struct
 	if err := json.Unmarshal([]byte(modData), &info); err != nil {
 		return ModInformation{}, fmt.Errorf("failed to unmarshal mod information: %w", err)
 	}

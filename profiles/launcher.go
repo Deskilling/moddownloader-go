@@ -16,13 +16,14 @@ func getLauncherProfiles() (string, string) {
 	username, _ := user.Current()
 
 	operatingSystem := runtime.GOOS
-	if operatingSystem == "windows" {
+	switch operatingSystem {
+	case "windows":
 		path = fmt.Sprintf("%s\\AppData\\Roaming\\.minecraft\\launcher_profiles.json", username.HomeDir)
 
-	} else if operatingSystem == "linux" {
+	case "linux":
 		path = fmt.Sprintf("%s/.minecraft/launcher_profiles.json", username.HomeDir)
 
-	} else if operatingSystem == "darwin" {
+	case "darwin":
 		// TODO - Test
 		path = fmt.Sprintf("%s/Library/Application Support/minecraft/launcher_profiles.json", username.HomeDir)
 	}
