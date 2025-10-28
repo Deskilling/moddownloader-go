@@ -1,13 +1,42 @@
 package request
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
 
+func GetLatestFabricVersion() string {
+	response, err := Request("https://meta.fabricmc.net/v2/versions/loader")
+	if err != nil {
+		panic(err)
+	}
+
+	var fabricVersion []Version
+	err = json.Unmarshal([]byte(response), &fabricVersion)
+	if err != nil {
+		panic(err)
+	}
+	return fabricVersion[0].Version
+}
+
+func GetLatestQuiltVersion() string {
+	response, err := Request("https://meta.quiltmc.org/v3/versions/loader")
+	if err != nil {
+		panic(err)
+	}
+
+	var quiltVersions []Version
+	err = json.Unmarshal([]byte(response), &quiltVersions)
+	if err != nil {
+		panic(err)
+	}
+	return quiltVersions[0].Version
+}
+
 func GetLatestForgeVersion(version string) string {
 	url := fmt.Sprintf("https://files.minecraftforge.net/net/minecraftforge/forge/index_%s.html", version)
-	response, err := ModrinthWebRequest(url)
+	response, err := Request(url)
 	if err != nil {
 		return ""
 	}
@@ -16,13 +45,13 @@ func GetLatestForgeVersion(version string) string {
 
 	downloadsIndex := strings.Index(content, `<div class="downloads">`)
 	if downloadsIndex == -1 {
-		fmt.Println("❌ Could not find downloads section")
+		fmt.Println("ould not find downloads section")
 		return ""
 	}
 
 	smallIndex := strings.Index(content[downloadsIndex:], "<small>")
 	if smallIndex == -1 {
-		fmt.Println("❌ Could not find version information")
+		fmt.Println("Could not find version information")
 		return ""
 	}
 
