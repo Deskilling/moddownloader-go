@@ -130,7 +130,7 @@ func downloadAllModpack(path, version, loader string) {
 		panic(err)
 	}
 
-	jsonData := filesystem.ReadFile("temp/modrinth.index.json")
+	jsonData, err := filesystem.ReadFile("temp/modrinth.index.json")
 	modpackData, _, _ := modpack.ParseModpack(jsonData, version, loader)
 
 	for i, v := range modpackData.Files {

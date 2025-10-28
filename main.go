@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/deskilling/moddownloader-go/cli"
 	"github.com/deskilling/moddownloader-go/downloader"
@@ -13,33 +12,53 @@ import (
 	"github.com/deskilling/moddownloader-go/util"
 )
 
-func main() {
-	// only macos needs sudo perms ...
-	if runtime.GOOS == "darwin" {
-		if !util.IsRunningAsRoot() {
-			fmt.Println("Trying to Relauch with Sudo")
-			util.Relaunch()
+func Init() {
+	util.CheckPlatform()
+
+	// TODO - Improve messy main.go
+	args, err := util.LoadConfig()
+	if err == nil || args != util.GetEmptyConfig() {
+		settings, err := util.LoadConfig()
+		if err != nil {
 			return
 		}
-	}
 
-	fmt.Println(util.GetTime())
+		sha1Hashes, sha512Hashes, allFiles, _ := filesystem.CalculateAllHashesFromDirectory(settings.Input)
 
-	if len(os.Args) < 2 {
-		cli.CliMain()
-	} else {
-		version, loader, input, output, mode := util.CheckArgs()
-		sha1Hashes, sha512Hashes, allFiles, _ := filesystem.CalculateAllHashesFromDirectory(input)
-		switch mode {
+		switch settings.Mode {
 		case "mods":
-			downloader.UpdateAllViaArgs(version, loader, output, sha1Hashes, sha512Hashes, allFiles)
+			downloader.UpdateAllViaArgs(args.Version, args.Loader, args.Output, sha1Hashes, sha512Hashes, allFiles)
 		case "modpack":
-			jsonData, err := filesystem.CheckMrpack(input)
+			jsonData, err := filesystem.CheckMrpack(args.Input)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(-1)
 			}
-			modpack.ParseModpack(jsonData, version, loader)
+			modpack.ParseModpack(jsonData, args.Version, args.Loader)
+		case "export":
+			break
+		}
+	}
+}
+
+func main() {
+	Init()
+
+	if len(os.Args) < 2 {
+		cli.CliMain()
+	} else {
+		args := util.CheckArgs()
+		sha1Hashes, sha512Hashes, allFiles, _ := filesystem.CalculateAllHashesFromDirectory(args.Input)
+		switch args.Mode {
+		case "mods":
+			downloader.UpdateAllViaArgs(args.Version, args.Loader, args.Output, sha1Hashes, sha512Hashes, allFiles)
+		case "modpack":
+			jsonData, err := filesystem.CheckMrpack(args.Input)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(-1)
+			}
+			modpack.ParseModpack(jsonData, args.Version, args.Loader)
 		case "export":
 			break
 		}
