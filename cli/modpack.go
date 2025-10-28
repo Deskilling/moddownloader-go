@@ -100,7 +100,7 @@ func modpackMain() {
 		return
 	}
 
-	modpackContent := filesystem.ReadFile(filepath.Join("temp", "modrinth.index.json"))
+	modpackContent, err := filesystem.ReadFile(filepath.Join("temp", "modrinth.index.json"))
 	err = filesystem.CheckOutputPath(outputPath)
 	if err != nil {
 		fmt.Println("❌ Error checking/creating output folder:", err)
