@@ -4,14 +4,27 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"syscall"
 )
+
+func CheckPlatform() {
+	// mac
+	if runtime.GOOS == "darwin" {
+		if !IsRunningAsRoot() {
+			fmt.Println("Trying to Relauch with Sudo")
+			RelaunchAsRoot()
+			return
+		}
+	}
+
+}
 
 func IsRunningAsRoot() bool {
 	return syscall.Geteuid() == 0
 }
 
-func Relaunch() {
+func RelaunchAsRoot() {
 	executable, err := os.Executable()
 	if err != nil {
 		fmt.Println("Error getting executable:", err)

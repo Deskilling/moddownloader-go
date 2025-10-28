@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 )
 
-func ReadFile(filepath string) string {
+func ReadFile(filepath string) (string, error) {
 	fileContent, err := os.ReadFile(filepath)
 	if err != nil {
 		fmt.Println("Error reading file:", err)
-		return ""
+		return "", err
 	}
-	return string(fileContent)
+	return string(fileContent), err
 }
 
 func WriteFile(path string, content []byte) {

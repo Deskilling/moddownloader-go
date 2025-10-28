@@ -28,7 +28,12 @@ func getLauncherProfiles() (string, string) {
 		path = fmt.Sprintf("%s/Library/Application Support/minecraft/launcher_profiles.json", username.HomeDir)
 	}
 
-	return filesystem.ReadFile(path), path
+	content, err := filesystem.ReadFile(path)
+	if err != nil {
+		return "", ""
+	}
+
+	return content, path
 }
 
 func parseLauncherProfiles(jsonData string) Config {
