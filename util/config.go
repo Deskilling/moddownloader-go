@@ -7,6 +7,8 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
+var cfg Config
+
 type general struct {
 	MaxRoutines int `comment:"maximum of gorutines at once"`
 }
@@ -20,13 +22,13 @@ type location struct {
 	Modpacks string `comment:"path to the modpack.toml file"`
 }
 
-type config struct {
+type Config struct {
 	General   general
 	Automatic automatic
 	Location  location
 }
 
-var dCfg = &config{
+var dCfg = &Config{
 	General: general{
 		MaxRoutines: 64,
 	},
@@ -56,7 +58,7 @@ func DefaultConfig() {
 	}
 }
 
-func ReadConfig() *config {
+func ReadConfig() *Config {
 	if filesystem.ExistPath("config.toml") {
 		c, err := filesystem.ReadFile("config.toml")
 		if err != nil {
@@ -65,7 +67,6 @@ func ReadConfig() *config {
 		}
 
 		if len(c) > 0 {
-			var cfg config
 			err = toml.Unmarshal([]byte(c), &cfg)
 			if err != nil {
 				return nil
@@ -76,4 +77,8 @@ func ReadConfig() *config {
 
 	DefaultConfig()
 	return dCfg
+}
+
+func GetSettings() *Config {
+	return &cfg
 }

@@ -16,6 +16,10 @@ func ReadFile(filepath string) (string, error) {
 }
 
 func WriteFile(path string, content []byte) error {
+	if !ExistPath(path) {
+		CreatePath(path)
+	}
+
 	err := os.WriteFile(path, content, 0777)
 	if err != nil {
 		log.Error("failed writing", "path", path, "err", err)
