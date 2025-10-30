@@ -1,48 +1,23 @@
 package filesystem
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
+
+	"github.com/charmbracelet/log"
 )
 
 func ReadFile(filepath string) (string, error) {
 	fileContent, err := os.ReadFile(filepath)
 	if err != nil {
-		fmt.Println("Error reading file:", err)
+		log.Error("Error reading file", "filepath", filepath, "err", err)
 		return "", err
 	}
 	return string(fileContent), err
 }
 
 func WriteFile(path string, content []byte) {
-	// 0064 is the permission level
-	err := os.WriteFile(path, content, 0064)
+	err := os.WriteFile(path, content, os.ModeAppend)
 	if err != nil {
 		return
 	}
-}
-
-func GetAllFilesFromDirectory(directory string, extension string) ([]os.DirEntry, error) {
-	doesExist, err := DoesPathExist(directory)
-	if err != nil {
-		return nil, err
-	}
-	if doesExist {
-		allFiles, err := os.ReadDir(directory)
-		if err != nil {
-			return nil, err
-		}
-
-		var filteredFiles []os.DirEntry
-
-		for _, file := range allFiles {
-			if filepath.Ext(file.Name()) == extension {
-				filteredFiles = append(filteredFiles, file)
-			}
-		}
-
-		return filteredFiles, nil
-	}
-	return nil, nil
 }
