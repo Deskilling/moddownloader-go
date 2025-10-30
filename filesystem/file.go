@@ -15,9 +15,11 @@ func ReadFile(filepath string) (string, error) {
 	return string(fileContent), err
 }
 
-func WriteFile(path string, content []byte) {
-	err := os.WriteFile(path, content, os.ModeAppend)
+func WriteFile(path string, content []byte) error {
+	err := os.WriteFile(path, content, 0777)
 	if err != nil {
-		return
+		log.Error("failed writing", "path", path, "err", err)
+		return err
 	}
+	return nil
 }

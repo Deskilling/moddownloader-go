@@ -2,7 +2,10 @@ module moddownloader
 
 go 1.25.3
 
-require github.com/charmbracelet/log v0.4.2
+require (
+	github.com/charmbracelet/log v0.4.2
+	github.com/pelletier/go-toml/v2 v2.2.4
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
