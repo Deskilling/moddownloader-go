@@ -21,7 +21,7 @@ func CreatePath(path string) error {
 		return nil
 	}
 
-	err := os.MkdirAll(path, os.ModeDir)
+	err := os.MkdirAll(filepath.Dir(path), 0755)
 	if err != nil {
 		log.Error("failed creating", "path", path, "err", err)
 		return err
