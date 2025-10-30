@@ -1,20 +1,48 @@
 package filesystem
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/charmbracelet/log"
 )
 
+func ReadDirectory(path string, extension string) ([]os.DirEntry, error) {
+	if ExistPath(path) {
+		if IsDirEmpty(path) {
+			log.Error("directory is emptry", "path", path)
+			return nil, nil
+		}
+
+		allFiles, err := os.ReadDir(path)
+		if err != nil {
+			return nil, err
+		}
+
+		var filteredFiles []os.DirEntry
+
+		for _, file := range allFiles {
+			if filepath.Ext(file.Name()) == extension {
+				filteredFiles = append(filteredFiles, file)
+			}
+		}
+
+		return filteredFiles, nil
+	}
+	return nil, nil
+}
+
 func CopyDirectory(source string, target string) error {
-	err := os.MkdirAll(target, 0755) // for dir
+	err := CreatePath(target)
 	if err != nil {
-		return fmt.Errorf("failed to create target directory: %w", err)
+		log.Error("failed to create target directory", "source", source, "target", target, "err", err)
+		return err
 	}
 
-	files, err := os.ReadDir(source)
+	files, err := ReadDirectory(source, "")
 	if err != nil {
-		return fmt.Errorf("failed to read source directory: %w", err)
+		log.Error("failed to read source directory", "source", source, "target", target, "err", err)
+		return err
 	}
 
 	for _, f := range files {
@@ -28,12 +56,14 @@ func CopyDirectory(source string, target string) error {
 		} else {
 			content, err := os.ReadFile(sourcePath)
 			if err != nil {
-				return fmt.Errorf("failed to read file %s: %w", sourcePath, err)
+				log.Error("failed to read file", "source", source, "err", err)
+				return err
 			}
 
-			err = os.WriteFile(targetPath, content, 0644) // for files
+			err = os.WriteFile(targetPath, content, os.ModeAppend)
 			if err != nil {
-				return fmt.Errorf("failed to write file %s: %w", targetPath, err)
+				log.Error("failed to write file", "target", target, "err", err)
+				return err
 			}
 		}
 	}
