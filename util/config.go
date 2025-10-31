@@ -20,7 +20,7 @@ type automatic struct {
 
 type location struct {
 	Modpacks string `comment:"path to the modpack.toml file"`
-	Tempdir  string `comment:"temporary path for stuff`
+	Tempdir  string `comment:"temporary path for stuff"`
 }
 
 type Config struct {
@@ -29,7 +29,7 @@ type Config struct {
 	Location  location
 }
 
-var dCfg = &Config{
+var dCfg = Config{
 	General: general{
 		MaxRoutines: 64,
 	},
@@ -42,7 +42,7 @@ var dCfg = &Config{
 	},
 	Location: location{
 		Modpacks: "./config/modpack.toml",
-		Tempdir:  "./temp",
+		Tempdir:  "./temp/",
 	},
 }
 
@@ -57,6 +57,16 @@ func DefaultConfig() {
 	if filesystem.WriteFile("config.toml", w) != nil {
 		log.Error("failed writing default config")
 		return
+	}
+
+	log.Info("Created Default config")
+}
+
+// TODO - Add More checks
+func checkConfig(cfg *Config) {
+	if cfg.General.MaxRoutines <= 0 {
+		log.Warn("invalid setting for General.MaxRoutines", "old", cfg.General.MaxRoutines, "new", dCfg.General.MaxRoutines)
+		cfg.General.MaxRoutines = dCfg.General.MaxRoutines
 	}
 }
 
@@ -73,12 +83,15 @@ func ReadConfig() *Config {
 			if err != nil {
 				return nil
 			}
+
+			checkConfig(&cfg)
 			return &cfg
 		}
 	}
 
 	DefaultConfig()
-	return dCfg
+	cfg = dCfg
+	return &cfg
 }
 
 func GetSettings() *Config {
