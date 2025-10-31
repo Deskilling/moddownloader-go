@@ -12,7 +12,8 @@ import (
 )
 
 func ExtractMrPack(path string) {
-	filesystem.ExtractZip(path, util.GetSettings().Location.Tempdir+"/modpack")
+	filesystem.ExtractZip(path, util.GetSettings().Location.Tempdir+"modpack"+path)
+
 }
 
 func ParseMrpackJson(jsonData string) *Mrpack {

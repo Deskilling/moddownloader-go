@@ -31,6 +31,7 @@ func ExtractZip(source, dest string) error {
 			log.Error("failed creating path", "path", filepath.Dir(name), "err", err)
 			return err
 		}
+		CreatePath(name)
 		create, err := os.Create(name)
 		if err != nil {
 			log.Error("failed creating file", "file", name, "err", err)
