@@ -16,7 +16,7 @@ func Mod(modData string) (*ModInformation, error) {
 	return &mInfo, nil
 }
 
-func AllVersions(modVersionData string) (*[]ModVersionInformation, error) {
+func AllVersionHash(modVersionData string) (*[]ModVersionInformation, error) {
 	var vInfo []ModVersionInformation
 	if err := json.Unmarshal([]byte(modVersionData), &vInfo); err != nil {
 		log.Error("failed to unmarshal", "err", err)
