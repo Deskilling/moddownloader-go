@@ -20,6 +20,7 @@ type automatic struct {
 
 type location struct {
 	Modpacks string `comment:"path to the modpack.toml file"`
+	Tempdir  string `comment:"temporary path for stuff`
 }
 
 type Config struct {
@@ -41,6 +42,7 @@ var dCfg = &Config{
 	},
 	Location: location{
 		Modpacks: "./config/modpack.toml",
+		Tempdir:  "./temp",
 	},
 }
 
