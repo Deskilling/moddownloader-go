@@ -1,7 +1,6 @@
 package main
 
 import (
-	"moddownloader/filesystem"
 	"moddownloader/modpack"
 	"moddownloader/util"
 
@@ -12,10 +11,12 @@ func Init() {
 	util.InitLogger(-4)
 	util.ReadConfig()
 
+	log.Debug(util.GetSettings().General.MaxRoutines)
+
 }
 
 func main() {
 	Init()
-	c, _ := filesystem.ReadFile("./modrinth.index.json")
-	log.Debug(modpack.GetIdsMrpack(modpack.ParseMrpackJson(c)))
+	modpack.RemoveModpack("schwanz")
+	modpack.ExtractMrPack("./modpack.mrpack")
 }
