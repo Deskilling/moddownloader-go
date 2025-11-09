@@ -11,20 +11,6 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-type EndpointMap map[string]string
-
-var ModrinthEndpoint = EndpointMap{
-	"default":               "https://api.modrinth.com",
-	"modInformation":        "https://api.modrinth.com/v2/project/%s",
-	"modVersionInformation": "https://api.modrinth.com/v2/project/%s/version",
-	"versionFileHash":       "https://api.modrinth.com/v2/version_file/%s",
-	"versionUpdate":         "https://api.modrinth.com/v2/version_file/{hash}/update",
-	"availableVersions":     "https://api.modrinth.com/v2/tag/game_version",
-	"availableLoaders":      "https://api.modrinth.com/v2/tag/loader",
-
-	// "search": "https://api.modrinth.com/v2/search",
-}
-
 func Request(endpoint string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {

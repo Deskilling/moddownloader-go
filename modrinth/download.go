@@ -33,6 +33,14 @@ func Download(id, version, loader, path string) (*extract.Download, error) {
 }
 
 func DownloadAll(id []string, version, loader, output string) {
+	if version == "latest" {
+		latest, err := request.GetReleaseVersions()
+		if err != nil {
+			return
+		}
+		version = latest[0].Version
+	}
+
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, util.GetSettings().General.MaxRoutines)
 

@@ -27,3 +27,12 @@ func WriteFile(path string, content []byte) error {
 	}
 	return nil
 }
+
+func DeleteFile(path string) error {
+	if ExistPath(path) {
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+	}
+	return nil
+}
