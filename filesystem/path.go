@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/log"
 )
@@ -14,6 +15,12 @@ func ExistPath(path string) bool {
 		return true
 	}
 	return false
+}
+
+func GetSlug(path string) string {
+	base := filepath.Base(path)
+	ext := filepath.Ext(base)
+	return strings.TrimSuffix(base, ext)
 }
 
 func CreatePath(path string) error {

@@ -10,7 +10,7 @@ import (
 )
 
 func GetDownloads(id, version, loader string) (*extract.Download, error) {
-	cInfo, err := request.Request(fmt.Sprintf(request.ModrinthEndpoint["modVersionInformation"], id))
+	cInfo, err := request.GetBody(fmt.Sprintf(request.ModrinthEndpoint["modVersionInformation"], id))
 	if err != nil {
 		log.Error("request failed", "err", err)
 		return nil, err
@@ -33,7 +33,7 @@ func GetDownloads(id, version, loader string) (*extract.Download, error) {
 
 func ProjectIdToTitle(projectId string) (string, error) {
 	url := fmt.Sprintf(request.ModrinthEndpoint["modInformation"], projectId)
-	response, err := request.Request(url)
+	response, err := request.GetBody(url)
 	if err != nil {
 		log.Error("failed to fetch project information", "err", err)
 		return "", err
@@ -50,9 +50,9 @@ func ProjectIdToTitle(projectId string) (string, error) {
 
 func GetIdFromHash(hash string) (*string, error) {
 	url := fmt.Sprintf(request.ModrinthEndpoint["versionFileHash"], hash)
-	response, err := request.Request(url)
+	response, err := request.GetBody(url)
 	if err != nil {
-		log.Error("failed to fetch project information", "err", err)
+		log.Error("failed to fetch project information", "url", url, "err", err)
 		return nil, err
 	}
 

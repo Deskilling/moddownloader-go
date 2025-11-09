@@ -6,37 +6,95 @@ import (
 	"moddownloader/filesystem"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/charmbracelet/log"
 )
 
-func Request(endpoint string) (string, error) {
-	request, err := http.NewRequest("GET", endpoint, nil)
+type EndpointMap map[string]string
+
+var ModrinthEndpoint = EndpointMap{
+	"default":               "https://api.modrinth.com",
+	"modInformation":        "https://api.modrinth.com/v2/project/%s",
+	"modVersionInformation": "https://api.modrinth.com/v2/project/%s/version",
+	"versionFileHash":       "https://api.modrinth.com/v2/version_file/%s",
+	"versionUpdate":         "https://api.modrinth.com/v2/version_file/{hash}/update",
+	"availableVersions":     "https://api.modrinth.com/v2/tag/game_version",
+	"availableLoaders":      "https://api.modrinth.com/v2/tag/loader",
+
+	// "search": "https://api.modrinth.com/v2/search",
+}
+
+func Request(endpoint string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	request.Header.Set("User-Agent", "Deskilling/moddownloader-go")
+	req.Header.Set("User-Agent", "Deskilling/moddownloader-go")
 	client := &http.Client{}
 
-	modrinthResponse, err := client.Do(request)
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("request failed", "err", err)
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		log.Error("request failed", "status", resp.StatusCode)
+		return nil, fmt.Errorf("status not ok")
+	}
+
+	return resp, nil
+}
+
+func GetBody(endpoint string) (string, error) {
+	resp, err := Request(endpoint)
+	if err != nil {
 		return "", err
 	}
-	defer modrinthResponse.Body.Close()
+	defer resp.Body.Close()
 
-	if modrinthResponse.StatusCode != http.StatusOK {
-		log.Error("request failed", "status", modrinthResponse.StatusCode)
-		return "", fmt.Errorf("status not ok")
-	}
-
-	body, err := io.ReadAll(modrinthResponse.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("failed to read response body", "err", err)
 		return "", err
 	}
+
 	return string(body), nil
+}
+
+type ModrinthRateLimit struct {
+	Limit     int
+	Remaining int
+	Reset     int
+}
+
+func CheckModrinthRate() (rateLimit ModrinthRateLimit, err error) {
+	response, err := Request(ModrinthEndpoint["default"])
+	if err != nil {
+		return rateLimit, err
+	}
+	defer response.Body.Close()
+
+	rateLimit.Limit, err = parse(response, "X-RateLimit-Limit")
+	rateLimit.Remaining, err = parse(response, "X-RateLimit-Remaining")
+	rateLimit.Reset, err = parse(response, "X-RateLimit-Reset")
+
+	return rateLimit, err
+}
+
+func parse(r *http.Response, name string) (int, error) {
+	s := r.Header.Get(name)
+	if s == "" {
+		return 0, fmt.Errorf("missing header %s", name)
+	}
+	v, e := strconv.ParseInt(s, 10, 0)
+	if e != nil {
+		return 0, fmt.Errorf("invalid %s: %w", name, e)
+	}
+	return int(v), nil
 }
 
 func CheckConnection() bool {
