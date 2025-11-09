@@ -1,6 +1,8 @@
 package main
 
 import (
+	"moddownloader/filesystem"
+	"moddownloader/modpack"
 	"moddownloader/util"
 )
 
@@ -11,4 +13,17 @@ func Init() {
 
 func main() {
 	Init()
+	if util.GetSettings().Automatic.Toggle {
+		for i, v := range util.GetSettings().Automatic.Modpacks {
+			if err := modpack.UpdateToml(i, v); err != nil {
+				return
+			}
+		}
+	} else {
+		modpacks, _ := filesystem.ReadDirectory("./", ".mrpack")
+
+		for _, v := range modpacks {
+			modpack.ConvertMrpack(v.Name())
+		}
+	}
 }
