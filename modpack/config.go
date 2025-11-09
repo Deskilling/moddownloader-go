@@ -8,9 +8,21 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
+type Modpack struct {
+	Version string
+	Loader  string
+	Mode    string // Either mrpack or toml
+	Input   string // Either mrpack or toml
+	Output  string
+}
+
+type Config struct {
+	Modpacks map[string]Modpack
+}
+
 func ReadModpacks() (*Config, error) {
-	if filesystem.ExistPath(util.GetSettings().Location.Modpacks) {
-		c, err := filesystem.ReadFile(util.GetSettings().Location.Modpacks)
+	if filesystem.ExistPath(util.GetSettings().Location.Modpack) {
+		c, err := filesystem.ReadFile(util.GetSettings().Location.Config + "modpack.toml")
 		if err != nil {
 			log.Error("failed reading file")
 			return nil, err
@@ -25,12 +37,30 @@ func ReadModpacks() (*Config, error) {
 			}
 			return &mp, nil
 		}
+	} else {
+		if err := filesystem.CreatePath(util.GetSettings().Location.Config + "modpack.toml"); err != nil {
+			log.Error("failed creating modpack config", "err", err)
+			return nil, err
+		}
+
+		// This may be used in the future to create default settings
+
+		var config Config
+		w, err := toml.Marshal(config)
+		if err != nil {
+			return nil, err
+		}
+
+		if filesystem.WriteFile(util.GetSettings().Location.Config+"modpack.toml", w) != nil {
+			log.Error("failed writing default config")
+			return nil, err
+		}
 	}
 
 	return nil, nil
 }
 
-func AddModpack(name, version, loader, input, output string) error {
+func AddModpack(name, version, loader, mode, input, output string) error {
 	mp, err := ReadModpacks()
 	if err != nil {
 		log.Error("failed reading modpacks", "err", err)
@@ -40,6 +70,7 @@ func AddModpack(name, version, loader, input, output string) error {
 	nmp := Modpack{
 		Version: version,
 		Loader:  loader,
+		Mode:    mode,
 		Input:   input,
 		Output:  output,
 	}
@@ -75,10 +106,13 @@ func WriteModpack(mp Config) error {
 		return err
 	}
 
-	if err := filesystem.WriteFile(util.GetSettings().Location.Modpacks, w); err != nil {
+	if err := filesystem.WriteFile(util.GetSettings().Location.Config+"modpack.toml", w); err != nil {
 		log.Error("failed writing file", "err", err)
 		return err
 	}
 
 	return nil
+}
+
+func ConvertMrpack(path string) {
 }

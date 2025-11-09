@@ -2,6 +2,7 @@ package modrinth
 
 import (
 	"sync"
+	"time"
 
 	"moddownloader/extract"
 	"moddownloader/request"
@@ -13,29 +14,71 @@ import (
 func Download(id, version, loader, path string) (*extract.Download, error) {
 	dl, err := GetDownloads(id, version, loader)
 	if err != nil {
-		log.Error("failed getting downloads", "err", err)
+		log.Error("failed getting downloads", "id", id, "err", err)
+		return nil, err
+	}
+	if dl == nil || dl.Url == "" || dl.Filename == "" {
+		log.Error("invalid download object", "id", id)
 		return nil, err
 	}
 
-	if err = request.DownloadFile(dl.Url, path+dl.Filename); err != nil {
-		log.Error("failed downloading", "url", dl.Url, "err", err)
+	fullPath := path + dl.Filename
+	if err = request.DownloadFile(dl.Url, fullPath); err != nil {
+		log.Error("failed downloading", "id", id, "url", dl.Url, "err", err)
+		return nil, err
 	}
 
+	log.Debug("downloaded", "filename", dl.Filename)
 	return dl, nil
 }
 
 func DownloadAll(id []string, version, loader, output string) {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, util.GetSettings().General.MaxRoutines)
+
+	rateLimit, err := request.CheckModrinthRate()
+	if err != nil {
+		log.Error("failed to check rate limit", "err", err)
+		return
+	}
+
+	remaining := rateLimit.Remaining
+
 	for _, v := range id {
+		if remaining <= 0 {
+			waitTime := time.Duration(rateLimit.Reset) * time.Second
+			log.Warn("rate limit reached, waiting before continuing",
+				"wait_seconds", waitTime.Seconds())
+
+			time.Sleep(waitTime)
+
+			rateLimit, err = request.CheckModrinthRate()
+			if err != nil {
+				log.Error("failed to recheck rate limit", "err", err)
+				return
+			}
+
+			remaining = rateLimit.Remaining
+			log.Info("resumed after cooldown", "remaining", remaining)
+		}
+
 		wg.Add(1)
 		sem <- struct{}{}
+		remaining--
 
-		go func(id string) {
+		go func(v string) {
 			defer wg.Done()
 			defer func() { <-sem }()
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error("panic during download", "id", v, "err", r)
+				}
+			}()
 
-			Download(id, version, loader, output)
+			_, err := Download(v, version, loader, output)
+			if err != nil {
+				log.Error("download failed", "id", v, "err", err)
+			}
 		}(v)
 	}
 

@@ -9,7 +9,7 @@ import (
 )
 
 func GetLatestFabricVersion() (string, error) {
-	response, err := Request("https://meta.fabricmc.net/v2/versions/loader")
+	response, err := GetBody("https://meta.fabricmc.net/v2/versions/loader")
 	if err != nil {
 		log.Error("failed request", "err", err)
 		return "", err
@@ -25,7 +25,7 @@ func GetLatestFabricVersion() (string, error) {
 }
 
 func GetLatestQuiltVersion() (string, error) {
-	response, err := Request("https://meta.quiltmc.org/v3/versions/loader")
+	response, err := GetBody("https://meta.quiltmc.org/v3/versions/loader")
 	if err != nil {
 		log.Error("failed request", "err", err)
 		return "", err
@@ -42,7 +42,7 @@ func GetLatestQuiltVersion() (string, error) {
 
 func GetLatestForgeVersion(version string) (string, error) {
 	url := fmt.Sprintf("https://files.minecraftforge.net/net/minecraftforge/forge/index_%s.html", version)
-	response, err := Request(url)
+	response, err := GetBody(url)
 	if err != nil {
 		log.Error("failed request", "err", err)
 		return "", err

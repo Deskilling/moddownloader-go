@@ -15,6 +15,7 @@ func ExtractZip(source, dest string) error {
 		log.Error("failed reading zip", "source", source, "err", err)
 		return err
 	}
+
 	defer read.Close()
 	for _, file := range read.File {
 		if file.Mode().IsDir() {
