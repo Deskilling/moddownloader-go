@@ -23,6 +23,17 @@ func GetSlug(path string) string {
 	return strings.TrimSuffix(base, ext)
 }
 
+func ValidPath(path string) string {
+	path = strings.TrimRight(path, `/\`)
+	path = filepath.Clean(path)
+	sep := string(filepath.Separator)
+	if !strings.HasSuffix(path, sep) {
+		path += sep
+	}
+
+	return path
+}
+
 func CreatePath(path string) error {
 	if ExistPath(path) {
 		return nil
