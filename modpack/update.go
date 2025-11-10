@@ -1,6 +1,7 @@
 package modpack
 
 import (
+	"moddownloader/filesystem"
 	"moddownloader/modrinth"
 
 	"github.com/charmbracelet/log"
@@ -15,7 +16,7 @@ func UpdateToml(name, version string) error {
 
 	log.Debug("Modpack:\n", "version", version, "loader", mp.Loader, "output", mp.Output, "ids", mp.Ids)
 
-	modrinth.DownloadAll(mp.Ids, version, mp.Loader, mp.Output)
+	modrinth.DownloadAll(mp.Ids, version, mp.Loader, filesystem.ValidPath(mp.Output))
 
 	return nil
 }
