@@ -23,6 +23,11 @@ func GetSlug(path string) string {
 	return strings.TrimSuffix(base, ext)
 }
 
+func BackOncePath(path string) string {
+	path = strings.TrimRight(path, `minecraft`)
+	return path
+}
+
 func ValidPath(path string) string {
 	path = strings.TrimRight(path, `/\`)
 	path = filepath.Clean(path)
@@ -43,6 +48,32 @@ func CreatePath(path string) error {
 	if err != nil {
 		log.Error("failed creating", "path", path, "err", err)
 		return err
+	}
+
+	return nil
+}
+
+func ClearPath(path string) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		fullPath := filepath.Join(path, entry.Name())
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			continue
+		}
+
+		if err := os.Remove(fullPath); err != nil {
+			return err
+		}
 	}
 
 	return nil

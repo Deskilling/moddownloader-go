@@ -22,6 +22,7 @@ type Modpack struct {
 	Loader  string   `toml:"Loader"`
 	Output  string   `toml:"Output"`
 	Ids     []string `toml:"Ids"`
+	LastIds []string `tomel:"Lastds"`
 }
 
 type Config struct {
@@ -29,11 +30,15 @@ type Config struct {
 }
 
 func getConfigPath() string {
-	return filepath.Join(util.GetSettings().Location.Config, "modpack.toml")
+	path := filepath.Join(util.GetSettings().Location.Config, "modpack.toml")
+	filesystem.CreatePath(path)
+	return path
 }
 
 func getModpackPath(name string) string {
-	return filepath.Join(util.GetSettings().Location.Config, "modpacks", name+".toml")
+	path := filepath.Join(util.GetSettings().Location.Config, "modpacks", name+".toml")
+	filesystem.CreatePath(path)
+	return path
 }
 
 func ReadModpacks() (*Config, error) {
@@ -96,7 +101,7 @@ func WriteModpackFile(name string, mp Modpack) error {
 	}
 
 	path := getModpackPath(name)
-	if err := filesystem.CreatePath(filepath.Dir(path)); err != nil {
+	if err := filesystem.CreatePath(path); err != nil {
 		log.Error("failed creating modpack folder", "err", err)
 		return err
 	}
@@ -154,6 +159,7 @@ func ConvertMrpack(path string) {
 		Loader:  CheckDependencies(*mp),
 		Output:  "./output/" + mp.Name,
 		Ids:     GetIdsMrpack(mp),
+		LastIds: GetIdsMrpack(mp),
 	}
 
 	WriteModpackFile(mp.Name, tomlmp)

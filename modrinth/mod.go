@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"moddownloader/extract"
+	"moddownloader/filesystem"
 	"moddownloader/request"
 
 	"github.com/charmbracelet/log"
@@ -62,4 +63,28 @@ func GetIdFromHash(hash string) (*string, error) {
 	}
 
 	return &emvi.ProjectId, nil
+}
+
+// TODO Add Multithread
+func GetIdsFromPath(path string) (ids []string) {
+	sha1, sha512, files, err := filesystem.CalculateDirectoryHashes(path, ".jar")
+	if err != nil {
+		log.Error("failed caluclating hashes", "err", err)
+		return
+	}
+
+	for i := range files {
+		id, err := GetIdFromHash(sha1[i])
+		if err != nil {
+			id, err = GetIdFromHash(sha512[i])
+			if err != nil {
+				log.Warn("Not found on Modrinth (skipping)", "filename", files[i])
+				continue
+			}
+		}
+
+		ids = append(ids, *id)
+	}
+
+	return ids
 }

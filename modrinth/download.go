@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"moddownloader/extract"
+	"moddownloader/filesystem"
 	"moddownloader/request"
 	"moddownloader/util"
 
@@ -17,6 +18,9 @@ func Download(id, version, loader, path string) (*extract.Download, error) {
 		log.Error("failed getting downloads", "id", id, "err", err)
 		return nil, err
 	}
+
+	log.Debug(dl)
+
 	if dl == nil || dl.Url == "" || dl.Filename == "" {
 		log.Error("invalid download object", "id", id)
 		return nil, err
@@ -32,7 +36,9 @@ func Download(id, version, loader, path string) (*extract.Download, error) {
 	return dl, nil
 }
 
-func DownloadAll(id []string, version, loader, output string) {
+func DownloadAll(id []string, version, loader, output string) (downloadedId []string) {
+	filesystem.ClearPath(output)
+
 	if version == "latest" {
 		latest, err := request.GetReleaseVersions()
 		if err != nil {
@@ -41,6 +47,7 @@ func DownloadAll(id []string, version, loader, output string) {
 		version = latest[0].Version
 	}
 
+	var mu sync.Mutex
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, util.GetSettings().General.MaxRoutines)
 
@@ -86,9 +93,16 @@ func DownloadAll(id []string, version, loader, output string) {
 			_, err := Download(v, version, loader, output)
 			if err != nil {
 				log.Error("download failed", "id", v, "err", err)
+				return
 			}
+
+			mu.Lock()
+			downloadedId = append(downloadedId, v)
+			mu.Unlock()
 		}(v)
 	}
 
 	wg.Wait()
+
+	return downloadedId
 }
