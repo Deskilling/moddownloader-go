@@ -22,8 +22,6 @@ type location struct {
 	Config  string
 	Modpack string
 	Tempdir string
-
-	Overwrite bool `comment:"ONLY CHANGE THIS IF YOU KNOW WHAT YOU ARE DOING"`
 }
 
 type Config struct {
@@ -44,11 +42,9 @@ var dCfg = Config{
 		},
 	},
 	Location: location{
-		Config:  "./config/",
-		Modpack: "./config/modpack",
-		Tempdir: "./temp/",
-
-		Overwrite: false,
+		Config:  "./moddownloader/",
+		Modpack: "./moddownloader/modpack",
+		Tempdir: "./moddownloader/temp",
 	},
 }
 
