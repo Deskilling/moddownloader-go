@@ -58,34 +58,28 @@ func UpdateModpack(version string, mp *modpack.Modpack) {
 		return
 	}
 
-	mapOverview := make(map[string]bool)
-	mapOld := make(map[string]bool)
-	mapNew := make(map[string]bool)
+	mapIds := make(map[string]bool)
+	mapOldIds := make(map[string]bool)
+	mapNewIds := make(map[string]bool)
 
 	for _, id := range mp.Ids {
-		mapOverview[id] = true
+		mapIds[id] = true
 	}
 	for _, id := range mp.LastIds {
-		mapOld[id] = true
+		mapOldIds[id] = true
 	}
 	for _, id := range currentIds {
-		mapNew[id] = true
+		mapNewIds[id] = true
 	}
 
-	for id := range mapOld {
-		if !mapNew[id] {
-			delete(mapOverview, id)
+	for id := range mapNewIds {
+		if !mapIds[id] {
+			mapIds[id] = true
 		}
 	}
 
-	for id := range mapNew {
-		if !mapOld[id] {
-			mapOverview[id] = true
-		}
-	}
-
-	result := make([]string, 0, len(mapOverview))
-	for id := range mapOverview {
+	result := make([]string, 0, len(mapIds))
+	for id := range mapIds {
 		result = append(result, id)
 	}
 
@@ -94,8 +88,23 @@ func UpdateModpack(version string, mp *modpack.Modpack) {
 	log.Debug("loader is", "loader", mp.Loader)
 	log.Debug("version is", "version", version, "prismversion", PrismCurrentVersion())
 
+	modpack.WriteModpackFile("default", *mp)
 	PrismUpdateJson(version)
 
 	downloaded := modrinth.DownloadAll(mp.Ids, version, mp.Loader, filesystem.ValidPath(mp.Output))
-	mp.LastIds = downloaded
+
+	mapPresent := make(map[string]bool)
+	for _, id := range downloaded {
+		mapPresent[id] = true
+	}
+	for _, id := range currentIds {
+		mapPresent[id] = true
+	}
+
+	last := make([]string, 0, len(mapPresent))
+	for id := range mapPresent {
+		last = append(last, id)
+	}
+
+	mp.LastIds = last
 }
