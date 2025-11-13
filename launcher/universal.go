@@ -51,42 +51,33 @@ func UpdateModpack(version string, mp *modpack.Modpack) {
 
 	currentIds := modrinth.GetIdsFromPath(path + "/mods")
 
-	if len(currentIds) == 0 {
-		log.Info("no existing mod IDs found, downloading all mods")
-		downloaded := modrinth.DownloadAll(mp.Ids, version, mp.Loader, filesystem.ValidPath(mp.Output))
-		mp.LastIds = downloaded
-		return
-	}
-
 	mapIds := make(map[string]bool)
-	mapOldIds := make(map[string]bool)
-	mapNewIds := make(map[string]bool)
-
 	for _, id := range mp.Ids {
 		mapIds[id] = true
 	}
-	for _, id := range mp.LastIds {
-		mapOldIds[id] = true
-	}
+
+	mapCurrent := make(map[string]bool)
 	for _, id := range currentIds {
-		mapNewIds[id] = true
+		mapCurrent[id] = true
 	}
 
-	for id := range mapNewIds {
+	for id := range mapIds {
+		if !mapCurrent[id] {
+			delete(mapIds, id)
+		}
+	}
+
+	for id := range mapCurrent {
 		if !mapIds[id] {
 			mapIds[id] = true
 		}
 	}
 
-	result := make([]string, 0, len(mapIds))
+	updatedIds := make([]string, 0, len(mapIds))
 	for id := range mapIds {
-		result = append(result, id)
+		updatedIds = append(updatedIds, id)
 	}
-
-	mp.Ids = result
-
-	log.Debug("loader is", "loader", mp.Loader)
-	log.Debug("version is", "version", version, "prismversion", PrismCurrentVersion())
+	mp.Ids = updatedIds
 
 	modpack.WriteModpackFile("default", *mp)
 	PrismUpdateJson(version)
@@ -105,6 +96,5 @@ func UpdateModpack(version string, mp *modpack.Modpack) {
 	for id := range mapPresent {
 		last = append(last, id)
 	}
-
 	mp.LastIds = last
 }
