@@ -90,14 +90,16 @@ func PrismCurrentLauncher() string {
 	jsonpath := filesystem.BackOncePath(dir) + "mmc-pack.json"
 	mmcpack := PrismMmcpack(jsonpath)
 
+	// TODO - Check Names
 	for _, v := range mmcpack.Component {
-		if v.Uid == "net.fabricmc.fabric-loader" {
+		switch v.Uid {
+		case "net.fabricmc.fabric-loader":
 			return "fabric"
-		} else if v.Uid == "net." {
+		case "net.quiltmc":
 			return "quilt"
-		} else if v.Uid == "net.forge" {
+		case "net.forge":
 			return "forge"
-		} else if v.Uid == "net.neoforge" {
+		case "net.neoforge":
 			return "neoforge"
 		}
 	}
@@ -107,9 +109,10 @@ func PrismCurrentLauncher() string {
 
 func PrimsUpdateVersion(version string, mmcpack *Mmcpackjson) error {
 	for i, v := range mmcpack.Component {
-		if v.Uid == "net.minecraft" || v.Uid == "net.fabricmc.intermediary" {
+		switch v.Uid {
+		case "net.minecraft", "net.fabricmc.intermediary":
 			mmcpack.Component[i].Version = version
-		} else if v.Uid == "net.fabricmc.fabric-loader" {
+		case "net.fabricmc.fabric-loader":
 			fabricVer, err := request.GetLatestFabricVersion()
 			if err != nil {
 				log.Error("failed getting latest fabric version", "err", err)
@@ -120,7 +123,6 @@ func PrimsUpdateVersion(version string, mmcpack *Mmcpackjson) error {
 		}
 		// TODO Add Forge, Neofroge, Quilt and maybe more
 	}
-
 	return nil
 }
 
@@ -134,6 +136,7 @@ func PrismUpdateJson(version string) {
 		latest, err := request.GetReleaseVersions()
 		if err != nil {
 			log.Error("failed getting versions", "err", err)
+			return
 		}
 		version = latest[0].Version
 	}
