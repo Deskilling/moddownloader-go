@@ -1,22 +1,31 @@
 package extract
 
 import (
-	"fmt"
 	"slices"
 )
 
-func GetDownload(extractedInformation []ModVersionInformation, version string, loader string) (string, string, bool, error) {
-	for _, v := range extractedInformation {
+type Download struct {
+	Url      string
+	Filename string
+	Sha1     string
+	Sha512   string
+}
+
+func GetDownload(mvi []ModVersionInformation, version, loader string) (*Download, error) {
+	for _, v := range mvi {
 		if slices.Contains(v.GameVersions, version) && slices.Contains(v.SupportedLoaders, loader) {
-			if len(v.Files) == 0 {
-				return "", "", true, fmt.Errorf("no files available")
+			if len(v.Files) > 0 {
+				var dl = Download{
+					Url:      v.Files[0].URL,
+					Filename: v.Files[0].Filename,
+					Sha1:     v.Files[0].Hashes.Sha1,
+					Sha512:   v.Files[0].Hashes.Sha512,
+				}
+
+				return &dl, nil
 			}
-
-			downloadUrl := v.Files[0].URL
-			filename := v.Files[0].Filename
-
-			return downloadUrl, filename, true, nil
 		}
 	}
-	return "", "", false, fmt.Errorf("idfk")
+
+	return nil, nil
 }

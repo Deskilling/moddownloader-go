@@ -4,69 +4,76 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/charmbracelet/log"
 )
 
-func GetLatestFabricVersion() string {
-	response, err := Request("https://meta.fabricmc.net/v2/versions/loader")
+func GetLatestFabricVersion() (string, error) {
+	response, err := GetBody("https://meta.fabricmc.net/v2/versions/loader")
 	if err != nil {
-		panic(err)
+		log.Error("failed request", "err", err)
+		return "", err
 	}
 
 	var fabricVersion []Version
 	err = json.Unmarshal([]byte(response), &fabricVersion)
 	if err != nil {
-		panic(err)
+		log.Error("failed json umarshal", "err", err)
+		return "", err
 	}
-	return fabricVersion[0].Version
+	return fabricVersion[0].Version, nil
 }
 
-func GetLatestQuiltVersion() string {
-	response, err := Request("https://meta.quiltmc.org/v3/versions/loader")
+func GetLatestQuiltVersion() (string, error) {
+	response, err := GetBody("https://meta.quiltmc.org/v3/versions/loader")
 	if err != nil {
-		panic(err)
+		log.Error("failed request", "err", err)
+		return "", err
 	}
 
 	var quiltVersions []Version
 	err = json.Unmarshal([]byte(response), &quiltVersions)
 	if err != nil {
-		panic(err)
+		log.Error("failed json umarshal", "err", err)
+		return "", err
 	}
-	return quiltVersions[0].Version
+	return quiltVersions[0].Version, nil
 }
 
-func GetLatestForgeVersion(version string) string {
+func GetLatestForgeVersion(version string) (string, error) {
 	url := fmt.Sprintf("https://files.minecraftforge.net/net/minecraftforge/forge/index_%s.html", version)
-	response, err := Request(url)
+	response, err := GetBody(url)
 	if err != nil {
-		return ""
+		log.Error("failed request", "err", err)
+		return "", err
 	}
 
 	content := response
 
 	downloadsIndex := strings.Index(content, `<div class="downloads">`)
 	if downloadsIndex == -1 {
-		fmt.Println("ould not find downloads section")
-		return ""
+		log.Error("could not find downloads section")
+		return "", err
 	}
 
 	smallIndex := strings.Index(content[downloadsIndex:], "<small>")
 	if smallIndex == -1 {
-		fmt.Println("Could not find version information")
-		return ""
+		log.Error("could not find version information")
+		return "", err
 	}
 
 	versionStart := downloadsIndex + smallIndex + 7
 	versionEnd := strings.Index(content[versionStart:], "</small>")
 	if versionEnd == -1 {
-		return ""
+		return "", err
 	}
 
 	versionString := content[versionStart : versionStart+versionEnd]
 
 	parts := strings.Split(versionString, " - ")
 	if len(parts) != 2 {
-		return ""
+		return "", err
 	}
 
-	return parts[1]
+	return parts[1], nil
 }
