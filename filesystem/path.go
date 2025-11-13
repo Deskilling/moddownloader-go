@@ -53,7 +53,7 @@ func CreatePath(path string) error {
 	return nil
 }
 
-func ClearPath(path string) error {
+func ClearPath(path, extension string) error {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return err
@@ -68,6 +68,10 @@ func ClearPath(path string) error {
 		}
 
 		if info.IsDir() {
+			continue
+		}
+
+		if filepath.Ext(entry.Name()) != extension {
 			continue
 		}
 
