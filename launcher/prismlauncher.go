@@ -2,9 +2,10 @@ package launcher
 
 import (
 	"encoding/json"
+	"os"
+
 	"moddownloader/filesystem"
 	"moddownloader/request"
-	"os"
 
 	"github.com/charmbracelet/log"
 )
