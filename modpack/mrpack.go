@@ -116,7 +116,7 @@ func GetIdsMrpack(mrpack *Mrpack) []string {
 			}
 
 			mu.Lock()
-			idList = append(idList, *hash)
+			idList = append(idList, hash.ProjectId)
 			mu.Unlock()
 		}(v)
 	}

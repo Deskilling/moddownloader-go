@@ -1,10 +1,10 @@
 package launcher
 
 import (
-	"moddownloader/filesystem"
+	"os"
+
 	"moddownloader/modpack"
 	"moddownloader/modrinth"
-	"os"
 
 	"github.com/charmbracelet/log"
 )
@@ -20,13 +20,18 @@ func CreateModpack(version, loader string) {
 	log.Debug(path)
 	ids := modrinth.GetIdsFromPath(path + "/mods")
 
+	var id []string
+	for _, v := range ids {
+		id = append(id, v.Id)
+	}
+
 	mp := modpack.Modpack{
 		Name:    "default",
 		Version: version,
 		Loader:  loader,
 		Output:  "./mods",
-		Ids:     ids,
-		LastIds: ids,
+		Ids:     id,
+		LastIds: id,
 	}
 
 	modpack.WriteModpackFile("default", mp)
@@ -49,52 +54,82 @@ func UpdateModpack(version string, mp *modpack.Modpack) {
 		return
 	}
 
-	currentIds := modrinth.GetIdsFromPath(path + "/mods")
+	mp.Version = version
 
-	mapIds := make(map[string]bool)
+	current := modrinth.GetIdsFromPath(path + "/mods")
+
+	currentSet := make(map[string]modrinth.Id, len(current))
+	for _, i := range current {
+		currentSet[i.Id] = i
+	}
+
+	idsSet := make(map[string]struct{}, len(mp.Ids))
 	for _, id := range mp.Ids {
-		mapIds[id] = true
+		idsSet[id] = struct{}{}
 	}
 
-	mapCurrent := make(map[string]bool)
-	for _, id := range currentIds {
-		mapCurrent[id] = true
+	lastSet := make(map[string]struct{}, len(mp.LastIds))
+	for _, id := range mp.LastIds {
+		lastSet[id] = struct{}{}
 	}
 
-	for id := range mapIds {
-		if !mapCurrent[id] {
-			delete(mapIds, id)
+	var add []string
+	var remove []string
+	var update []string
+	var keep []string
+
+	for id := range lastSet {
+		if _, ok := currentSet[id]; !ok {
+			remove = append(remove, id)
+			delete(idsSet, id)
 		}
 	}
 
-	for id := range mapCurrent {
-		if !mapIds[id] {
-			mapIds[id] = true
+	for id := range currentSet {
+		if _, wasBefore := lastSet[id]; !wasBefore {
+			add = append(add, id)
+			idsSet[id] = struct{}{}
 		}
 	}
 
-	updatedIds := make([]string, 0, len(mapIds))
-	for id := range mapIds {
-		updatedIds = append(updatedIds, id)
+	for id := range idsSet {
+		if _, ok := currentSet[id]; ok {
+			keep = append(keep, id)
+		}
 	}
-	mp.Ids = updatedIds
 
+	for id, info := range currentSet {
+		if _, ok := idsSet[id]; ok && !info.Latest {
+			update = append(update, id)
+		}
+	}
+
+	mp.Ids = make([]string, 0, len(idsSet))
+	for id := range idsSet {
+		mp.Ids = append(mp.Ids, id)
+	}
+
+	mp.LastIds = currentIdsToList(current)
 	modpack.WriteModpackFile("default", *mp)
-	PrismUpdateJson(version)
 
-	downloaded := modrinth.DownloadAll(mp.Ids, version, mp.Loader, filesystem.ValidPath(mp.Output))
+	for _, id := range keep {
+		log.Info("keep", "id", id)
+	}
+	for _, id := range remove {
+		log.Info("remove", "id", id)
+	}
+	for _, id := range add {
+		log.Info("add", "id", id)
+	}
+	for _, id := range update {
+		log.Info("update", "id", id)
+	}
+}
 
-	mapPresent := make(map[string]bool)
-	for _, id := range downloaded {
-		mapPresent[id] = true
+func currentIdsToList(current []modrinth.Id) []string {
+	out := make([]string, len(current))
+	for i, j := range current {
+		out[i] = j.Id
 	}
-	for _, id := range currentIds {
-		mapPresent[id] = true
-	}
-
-	last := make([]string, 0, len(mapPresent))
-	for id := range mapPresent {
-		last = append(last, id)
-	}
-	mp.LastIds = last
+	return out
 }
