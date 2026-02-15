@@ -3,7 +3,7 @@ package request
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+
 
 	"github.com/charmbracelet/log"
 )
@@ -41,39 +41,24 @@ func GetLatestQuiltVersion() (string, error) {
 }
 
 func GetLatestForgeVersion(version string) (string, error) {
-	url := fmt.Sprintf("https://files.minecraftforge.net/net/minecraftforge/forge/index_%s.html", version)
-	response, err := GetBody(url)
+	response, err := GetBody("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json")
 	if err != nil {
 		log.Error("failed request", "err", err)
 		return "", err
 	}
 
-	content := response
-
-	downloadsIndex := strings.Index(content, `<div class="downloads">`)
-	if downloadsIndex == -1 {
-		log.Error("could not find downloads section")
+	var forgePromotions map[string]map[string]string
+	err = json.Unmarshal([]byte(response), &forgePromotions)
+	if err != nil {
+		log.Error("failed json umarshal", "err", err)
 		return "", err
 	}
 
-	smallIndex := strings.Index(content[downloadsIndex:], "<small>")
-	if smallIndex == -1 {
-		log.Error("could not find version information")
-		return "", err
+	if promos, ok := forgePromotions["promos"]; ok {
+		if latest, ok := promos[version+"-latest"]; ok {
+			return latest, nil
+		}
 	}
 
-	versionStart := downloadsIndex + smallIndex + 7
-	versionEnd := strings.Index(content[versionStart:], "</small>")
-	if versionEnd == -1 {
-		return "", err
-	}
-
-	versionString := content[versionStart : versionStart+versionEnd]
-
-	parts := strings.Split(versionString, " - ")
-	if len(parts) != 2 {
-		return "", err
-	}
-
-	return parts[1], nil
+	return "", fmt.Errorf("could not find latest forge version for %s", version)
 }

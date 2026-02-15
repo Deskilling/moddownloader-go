@@ -1,6 +1,7 @@
 package extract
 
 import (
+	"fmt"
 	"slices"
 )
 
@@ -27,5 +28,5 @@ func GetDownload(mvi []ModVersionInformation, version, loader string) (*Download
 		}
 	}
 
-	return nil, nil
+	return nil, fmt.Errorf("no suitable download found for version %s and loader %s", version, loader)
 }

@@ -2,42 +2,41 @@ package main
 
 import (
 	"moddownloader/launcher"
+	"moddownloader/modrinth"
 	"moddownloader/util"
+
+	"github.com/charmbracelet/log"
 )
 
 func Init() {
-	util.InitLogger(-4)
-	util.ReadConfig()
+	util.InitLogger(log.DebugLevel)
+	if _, err := util.ReadConfig(); err != nil {
+		log.Fatal("failed to read config", "err", err)
+	}
 }
 
 func main() {
 	Init()
 
-	mp, err := launcher.ReadModpack()
-	if err != nil {
-		launcher.CreateModpack(launcher.PrismCurrentVersion(), launcher.PrismCurrentLauncher())
+	//launcher.DumpDatabase("./app.db")
+
+	var loader string
+	var version string
+
+	if launcher.IsPrism() {
+		version = launcher.PrismCurrentVersion()
+		loader = launcher.PrismCurrentLauncher()
 	} else {
-		launcher.UpdateModpack(launcher.PrismCurrentVersion(), mp)
+		return
 	}
 
-	/*
-		p := launcher.Mmcpack("./mmc-pack.json")
-		launcher.PrimsUpdateVersion("1.10", p)
-	*/
+	mp, err := launcher.ReadModpack()
+	if err != nil {
+		launcher.CreateModpack(version, loader)
+	} else {
+		launcher.UpdateModpack(version, mp)
+		modrinth.DownloadAll(mp.Ids, version, loader, mp.Output+"/")
+	}
 
-	/*
-		if util.GetSettings().Automatic.Toggle {
-			for i, v := range util.GetSettings().Automatic.Modpacks {
-				if err := modpack.UpdateToml(i, v); err != nil {
-					return
-				}
-			}
-		} else {
-			modpacks, _ := filesystem.ReadDirectory("./", ".mrpack")
-
-			for _, v := range modpacks {
-				modpack.ConvertMrpack(v.Name())
-			}
-		}
-	*/
+	log.Fatal("mfg")
 }

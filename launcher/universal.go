@@ -57,64 +57,26 @@ func UpdateModpack(version string, mp *modpack.Modpack) {
 	mp.Version = version
 
 	current := modrinth.GetIdsFromPath(path + "/mods")
+	currentSet := createIdSet(current)
+	idsSet := createStringSet(mp.Ids)
+	lastSet := createStringSet(mp.LastIds)
 
-	currentSet := make(map[string]modrinth.Id, len(current))
-	for _, i := range current {
-		currentSet[i.Id] = i
+	remove := getRemovedMods(lastSet, currentSet)
+	for _, id := range remove {
+		delete(idsSet, id)
 	}
 
-	idsSet := make(map[string]struct{}, len(mp.Ids))
-	for _, id := range mp.Ids {
+	add := getAddedMods(lastSet, currentSet)
+	for _, id := range add {
 		idsSet[id] = struct{}{}
 	}
 
-	lastSet := make(map[string]struct{}, len(mp.LastIds))
-	for _, id := range mp.LastIds {
-		lastSet[id] = struct{}{}
-	}
+	update := getUpdateMods(idsSet, currentSet)
 
-	var add []string
-	var remove []string
-	var update []string
-	var keep []string
-
-	for id := range lastSet {
-		if _, ok := currentSet[id]; !ok {
-			remove = append(remove, id)
-			delete(idsSet, id)
-		}
-	}
-
-	for id := range currentSet {
-		if _, wasBefore := lastSet[id]; !wasBefore {
-			add = append(add, id)
-			idsSet[id] = struct{}{}
-		}
-	}
-
-	for id := range idsSet {
-		if _, ok := currentSet[id]; ok {
-			keep = append(keep, id)
-		}
-	}
-
-	for id, info := range currentSet {
-		if _, ok := idsSet[id]; ok && !info.Latest {
-			update = append(update, id)
-		}
-	}
-
-	mp.Ids = make([]string, 0, len(idsSet))
-	for id := range idsSet {
-		mp.Ids = append(mp.Ids, id)
-	}
-
+	mp.Ids = stringSetToSlice(idsSet)
 	mp.LastIds = currentIdsToList(current)
 	modpack.WriteModpackFile("default", *mp)
 
-	for _, id := range keep {
-		log.Info("keep", "id", id)
-	}
 	for _, id := range remove {
 		log.Info("remove", "id", id)
 	}
@@ -124,6 +86,60 @@ func UpdateModpack(version string, mp *modpack.Modpack) {
 	for _, id := range update {
 		log.Info("update", "id", id)
 	}
+}
+
+func getRemovedMods(lastSet map[string]struct{}, currentSet map[string]modrinth.Id) []string {
+	var remove []string
+	for id := range lastSet {
+		if _, ok := currentSet[id]; !ok {
+			remove = append(remove, id)
+		}
+	}
+	return remove
+}
+
+func getAddedMods(lastSet map[string]struct{}, currentSet map[string]modrinth.Id) []string {
+	var add []string
+	for id := range currentSet {
+		if _, wasBefore := lastSet[id]; !wasBefore {
+			add = append(add, id)
+		}
+	}
+	return add
+}
+
+func getUpdateMods(idsSet map[string]struct{}, currentSet map[string]modrinth.Id) []string {
+	var update []string
+	for id, info := range currentSet {
+		if _, ok := idsSet[id]; ok && !info.Latest {
+			update = append(update, id)
+		}
+	}
+	return update
+}
+
+func createIdSet(ids []modrinth.Id) map[string]modrinth.Id {
+	set := make(map[string]modrinth.Id, len(ids))
+	for _, i := range ids {
+		set[i.Id] = i
+	}
+	return set
+}
+
+func createStringSet(ids []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		set[id] = struct{}{}
+	}
+	return set
+}
+
+func stringSetToSlice(set map[string]struct{}) []string {
+	slice := make([]string, 0, len(set))
+	for id := range set {
+		slice = append(slice, id)
+	}
+	return slice
 }
 
 func currentIdsToList(current []modrinth.Id) []string {

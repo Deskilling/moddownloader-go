@@ -6,6 +6,7 @@ import (
 	"moddownloader/filesystem"
 	"net/http"
 	"os"
+	"path/filepath" // Import the path/filepath package
 	"strconv"
 
 	"github.com/charmbracelet/log"
@@ -91,13 +92,13 @@ func CheckConnection() bool {
 	return true
 }
 
-func DownloadFile(url string, filepath string) (err error) {
-	if err := filesystem.CreatePath(filepath); err != nil {
+func DownloadFile(url string, filePath string) (err error) { // Changed parameter name to filePath
+	if err := filesystem.EnsureDirExists(filepath.Dir(filePath)); err != nil {
 		log.Error("failed creating path", "err", err)
 		return err
 	}
 
-	f, err := os.Create(filepath)
+	f, err := os.Create(filePath)
 	if err != nil {
 		log.Error("failed to create file", "err", err)
 		return err

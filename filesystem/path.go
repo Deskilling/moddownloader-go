@@ -23,7 +23,7 @@ func GetSlug(path string) string {
 	return strings.TrimSuffix(base, ext)
 }
 
-func BackOncePath(path string) string {
+func RemoveMinecraftSuffix(path string) string {
 	path = strings.TrimRight(path, `minecraft`)
 	return path
 }
@@ -39,12 +39,12 @@ func ValidPath(path string) string {
 	return path
 }
 
-func CreatePath(path string) error {
+func EnsureDirExists(path string) error {
 	if ExistPath(path) {
 		return nil
 	}
 
-	err := os.MkdirAll(filepath.Dir(path), 0755)
+	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		log.Error("failed creating", "path", path, "err", err)
 		return err
@@ -83,60 +83,41 @@ func ClearPath(path, extension string) error {
 	return nil
 }
 
-func IsDirEmpty(path string) bool {
+func IsDirEmpty(path string) (bool, error) {
 	if !ExistPath(path) {
-		return true
+		return false, os.ErrNotExist
 	}
 
 	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Error("failed reading", "path", path, "err", err)
-		return true
+		return false, err
 	}
 
-	if len(files) != 0 {
-		return false
-	}
-
-	return true
+	return len(files) == 0, nil
 }
 
 // verifies if the given path points to a valid .mrpack file
 func CheckMrpack(path string) (string, error) {
 	modpacksDir := "modpacks"
 	pathsToCheck := []string{
-		filepath.Join(path),                        // Default
-		filepath.Join(path + ".mrpack"),            // path.mrpack
-		filepath.Join(modpacksDir, path),           // modpacks/path
-		filepath.Join(modpacksDir, path+".mrpack"), // modpacks/path.mrpack
+		path,
+		path + ".mrpack",
+		filepath.Join(modpacksDir, path),
+		filepath.Join(modpacksDir, path+".mrpack"),
 	}
 
-	var validPath string
 	for _, p := range pathsToCheck {
-		if stat, err := os.Stat(p); err == nil {
-			if stat.IsDir() {
-				if filepath.Ext(p) == ".mrpack" {
-					validPath = p
-					break
-				}
-			} else {
-				validPath = p
-				break
+		stat, err := os.Stat(p)
+		if err == nil {
+			if stat.IsDir() && filepath.Ext(p) != ".mrpack" {
+				continue
 			}
+			return p, nil
 		}
 	}
 
-	if validPath == "" {
-		err := fmt.Errorf("invalid path")
-		log.Error("no valid .mrpack file found", "path", path, "err", err)
-		return "", err
-	}
-
-	if filepath.Ext(validPath) != ".mrpack" {
-		err := fmt.Errorf("invalid extension")
-		log.Error("returned file does not contain .mrpack extension", "path", path)
-		return "", err
-	}
-
-	return validPath, nil
+	err := fmt.Errorf("no valid .mrpack file found for %q", path)
+	log.Error(err)
+	return "", err
 }

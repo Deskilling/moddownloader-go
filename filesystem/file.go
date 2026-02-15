@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/charmbracelet/log"
 )
@@ -16,11 +17,12 @@ func ReadFile(filepath string) (string, error) {
 }
 
 func WriteFile(path string, content []byte) error {
-	if !ExistPath(path) {
-		CreatePath(path)
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		log.Error("failed creating directory", "path", path, "err", err)
+		return err
 	}
 
-	err := os.WriteFile(path, content, 0777)
+	err := os.WriteFile(path, content, 0644)
 	if err != nil {
 		log.Error("failed writing", "path", path, "err", err)
 		return err
@@ -29,10 +31,12 @@ func WriteFile(path string, content []byte) error {
 }
 
 func DeleteFile(path string) error {
-	if ExistPath(path) {
-		if err := os.Remove(path); err != nil {
-			return err
+	if err := os.Remove(path); err != nil {
+		// If the file doesn't exist, we don't need to return an error.
+		if os.IsNotExist(err) {
+			return nil
 		}
+		return err
 	}
 	return nil
 }
