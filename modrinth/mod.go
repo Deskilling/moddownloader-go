@@ -113,7 +113,7 @@ func GetIdsFromPath(path string) (ids []Id) {
 		sem <- struct{}{}
 		remaining--
 
-		go func(sha1, sha512 string) {
+		go func(sha1, sha512, filename string) {
 			defer wg.Done()
 			defer func() { <-sem }()
 
@@ -121,7 +121,7 @@ func GetIdsFromPath(path string) (ids []Id) {
 			if err != nil {
 				hashId, err = GetIdFromHash(sha512)
 				if err != nil {
-					log.Warn("Not found on Modrinth (skipping)", "filename", files[i])
+					log.Warn("Not found on Modrinth (skipping)", "filename", filename)
 					return
 				}
 			}
@@ -139,7 +139,7 @@ func GetIdsFromPath(path string) (ids []Id) {
 			ids = append(ids, rId)
 			mu.Unlock()
 
-		}(sha1[i], sha512[i])
+		}(sha1[i], sha512[i], files[i].Name())
 	}
 
 	wg.Wait()

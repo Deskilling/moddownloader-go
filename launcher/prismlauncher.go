@@ -62,15 +62,22 @@ func PrismMmcpack(path string) *Mmcpackjson {
 	return &mmcpack
 }
 
-func PrismCurrentVersion() string {
+func getPrismMmcpack() *Mmcpackjson {
 	if !IsPrism() {
 		log.Error("prism not detected")
-		return ""
+		return nil
 	}
 
 	dir := os.Getenv("INST_MC_DIR")
-	jsonpath := filesystem.BackOncePath(dir) + "mmc-pack.json"
-	mmcpack := PrismMmcpack(jsonpath)
+	jsonpath := filesystem.RemoveMinecraftSuffix(dir) + "mmc-pack.json"
+	return PrismMmcpack(jsonpath)
+}
+
+func PrismCurrentVersion() string {
+	mmcpack := getPrismMmcpack()
+	if mmcpack == nil {
+		return ""
+	}
 
 	for _, v := range mmcpack.Component {
 		if v.Uid == "net.minecraft" {
@@ -82,14 +89,10 @@ func PrismCurrentVersion() string {
 }
 
 func PrismCurrentLauncher() string {
-	if !IsPrism() {
-		log.Error("prism not detected")
+	mmcpack := getPrismMmcpack()
+	if mmcpack == nil {
 		return ""
 	}
-
-	dir := os.Getenv("INST_MC_DIR")
-	jsonpath := filesystem.BackOncePath(dir) + "mmc-pack.json"
-	mmcpack := PrismMmcpack(jsonpath)
 
 	// TODO - Check Names
 	for _, v := range mmcpack.Component {
@@ -143,7 +146,7 @@ func PrismUpdateJson(version string) {
 	}
 
 	dir := os.Getenv("INST_MC_DIR")
-	jsonpath := filesystem.BackOncePath(dir) + "mmc-pack.json"
+	jsonpath := filesystem.RemoveMinecraftSuffix(dir) + "mmc-pack.json"
 	mmcpack := PrismMmcpack(jsonpath)
 
 	PrimsUpdateVersion(version, mmcpack)

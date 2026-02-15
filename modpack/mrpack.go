@@ -2,6 +2,8 @@ package modpack
 
 import (
 	"encoding/json"
+	"fmt"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"moddownloader/util"
 
 	"github.com/charmbracelet/log"
+	"github.com/pelletier/go-toml/v2"
 )
 
 type Mrpack struct {
@@ -20,6 +23,15 @@ type Mrpack struct {
 	Game          string            `json:"game"`
 	Name          string            `json:"name"`
 	VersionId     string            `json:"versionId"`
+}
+
+type Modpack struct {
+	Name    string   `toml:"Name"`
+	Version string   `toml:"Version"`
+	Loader  string   `toml:"Loader"`
+	Output  string   `toml:"Output"`
+	Ids     []string `toml:"Ids"`
+	LastIds []string `tomem:"Lastds"`
 }
 
 type file struct {
@@ -150,4 +162,68 @@ func CheckDependencies(mp Mrpack) string {
 	}
 
 	return ""
+}
+
+func ConvertMrpack(path string) {
+	json := GetMrpackJson(path)
+	mp := ParseMrpackJson(json)
+
+	log.Warn(CheckDependencies(*mp))
+
+	tomlmp := Modpack{
+		Name:    mp.Name,
+		Version: mp.Dependencies["minecraft"],
+		Loader:  CheckDependencies(*mp),
+		Output:  "./output/" + mp.Name,
+		Ids:     GetIdsMrpack(mp),
+		LastIds: GetIdsMrpack(mp),
+	}
+
+	WriteModpackFile(mp.Name, tomlmp)
+}
+func WriteModpackFile(name string, mp Modpack) error {
+	data, err := toml.Marshal(&mp)
+	if err != nil {
+		log.Error("failed marshal modpack", "err", err)
+		return err
+	}
+
+	path := GetModpackPath(name)
+	if err := filesystem.EnsureDirExists(filepath.Dir(path)); err != nil {
+		log.Error("failed creating modpack folder", "err", err)
+		return err
+	}
+
+	if err := filesystem.WriteFile(path, data); err != nil {
+		log.Error("failed writing modpack file", "err", err)
+		return err
+	}
+
+	cfg, err := ReadModpacks()
+	if err != nil {
+		return err
+	}
+
+	cfg.Modpacks[name] = true
+	return WriteConfig(cfg)
+}
+
+func ReadModpack(name string) (*Modpack, error) {
+	path := GetModpackPath(name)
+	if !filesystem.ExistPath(path) {
+		return nil, fmt.Errorf("path %s does not exist", path)
+	}
+
+	content, err := filesystem.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var mp Modpack
+	if err := toml.Unmarshal([]byte(content), &mp); err != nil {
+		log.Error("failed unmarshal modpack", "err", err)
+		return nil, err
+	}
+
+	return &mp, nil
 }

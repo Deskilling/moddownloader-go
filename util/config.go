@@ -48,21 +48,6 @@ var dCfg = Config{
 	},
 }
 
-func DefaultConfig() {
-	w, err := toml.Marshal(&dCfg)
-	if err != nil {
-		return
-	}
-
-	log.Debug("", "w", string(w))
-
-	if filesystem.WriteFile("config.toml", w) != nil {
-		log.Error("failed writing default config")
-		return
-	}
-
-	log.Info("Created Default config")
-}
 
 // TODO - Add More checks
 func checkConfig(cfg *Config) {
@@ -72,29 +57,53 @@ func checkConfig(cfg *Config) {
 	}
 }
 
-func ReadConfig() *Config {
-	if filesystem.ExistPath("config.toml") {
-		c, err := filesystem.ReadFile("config.toml")
+func ReadConfig() (*Config, error) {
+	if !filesystem.ExistPath("config.toml") {
+		w, err := toml.Marshal(&dCfg)
 		if err != nil {
-			log.Error("failed reading file")
-			return nil
+			return nil, err
 		}
 
-		if len(c) > 0 {
-			err = toml.Unmarshal([]byte(c), &cfg)
-			if err != nil {
-				return nil
-			}
-
-			checkConfig(&cfg)
-			return &cfg
+		if err := filesystem.WriteFile("config.toml", w); err != nil {
+			log.Error("failed writing default config")
+			return nil, err
 		}
+		log.Info("Created Default config")
+		cfg = dCfg
+		return &cfg, nil
 	}
 
-	DefaultConfig()
+	c, err := filesystem.ReadFile("config.toml")
+	if err != nil {
+		log.Error("failed reading file")
+		return nil, err
+	}
+
+	if len(c) > 0 {
+		err = toml.Unmarshal([]byte(c), &cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		checkConfig(&cfg)
+		return &cfg, nil
+	}
+
+	// if the file is empty, write the default config
+	w, err := toml.Marshal(&dCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := filesystem.WriteFile("config.toml", w); err != nil {
+		log.Error("failed writing default config")
+		return nil, err
+	}
+	log.Info("Created Default config")
 	cfg = dCfg
-	return &cfg
+	return &cfg, nil
 }
+
 
 func GetSettings() *Config {
 	return &cfg

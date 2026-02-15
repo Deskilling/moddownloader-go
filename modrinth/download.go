@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"moddownloader/extract"
-	"moddownloader/filesystem"
+
 	"moddownloader/request"
 	"moddownloader/util"
 
@@ -37,8 +37,6 @@ func Download(id, version, loader, path string) (*extract.Download, error) {
 }
 
 func DownloadAll(id []string, version, loader, output string) (downloadedId []string) {
-	filesystem.ClearPath(output, ".jar")
-
 	if version == "latest" {
 		latest, err := request.GetReleaseVersions()
 		if err != nil {
